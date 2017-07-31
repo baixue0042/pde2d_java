@@ -20,7 +20,8 @@ public class Visualization {
 				float[] pixels_normed = new float[I*J];
 				for (int i=0; i<I; i++){
 					for (int j=0; j<J; j++){
-						pixels_normed[i*J+j] = (float) ((pixels[i][j]-data_min_max[s][0])/(data_min_max[s][1]-data_min_max[s][0]));
+						pixels_normed[i*J+j] = (float) pixels[i][j];
+						//pixels_normed[i*J+j] = (float) ((pixels[i][j]-data_min_max[s][0])/(data_min_max[s][1]-data_min_max[s][0]));
 					}
 				}
 				fp.insert(new FloatProcessor(J,I,pixels_normed), s*J, 0);

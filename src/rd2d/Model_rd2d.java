@@ -18,40 +18,52 @@ public class Model_rd2d implements Serializable{
 	Grid[][] data;
 	public Model_rd2d(){}
 	public Model_rd2d(double[] k_D, double[] k_R, double[] c0){
-		this.k_D = k_D;
+		this.k_D = k_D;//k_D: diffusion coefficient, unit micrometers**2/sec
 		this.k_R = k_R;
 		this.c0 = c0;
 	}
-	public void run(int T){
+	public void run(int T){//T: simulation time, unit seconds
 		// chemical reactions
 		int n_chemical = this.c0.length;
 		// spatial domain
-		double spanI= 10, spanJ = 5, hs = 0.1;//unit micrometers
+		double spanI= 8, spanJ = 4, hs = 0.1;//unit micrometers
 		int I=(int) (spanI/hs),J = (int) (spanJ/hs);
-		//k_D: diffusion coefficient, unit micrometers**2/sec
-		double[] loc = {3,2,0.6,0.4}; // center and diameter of square perturbation
+		
 		// temporal domain
-		//T: simulation time, unit seconds
 		double temp = 0.5 * (hs * hs) / array_max(k_D);  // characteristic time step based on diffusion
 		int groupt = (int) Math.ceil(1.0 / temp); // number of steps for 1 second
 		double ht = 1.0 / groupt; // time step, unit seconds
 		
-		// initial condition
-		this.data = new Grid[T+1][n_chemical]; // data dimension: time, chemicals
-		for (int s=0; s<n_chemical; s++){
-			this.data[0][s] = new Grid(I,J,this.c0[s]);
-		}
-		this.data[0][0].square_perturbation(0.1, loc, hs);
-		Grid[] data_t = new Grid[n_chemical];
+		// setup diffusion matrix
 		Matrix[][] M = new Matrix[n_chemical][4];
 		for (int s=0; s<n_chemical; s++){
-			data_t[s] = this.data[0][s];
 			M[s] = diffuse_ADI_matrix(I,J,hs,ht,k_D[s]);
 		}
+		// initial condition
+		this.data = new Grid[groupt*T][n_chemical]; // data dimension: time, chemicals
+		Grid[] data_t = new Grid[n_chemical];
+		for (int s=0; s<n_chemical; s++){// initialize with homogenous concentration
+			data_t[s] = new Grid(I,J,this.c0[s]);
+		}
+		
+		// square perturbation
+		int perturb_chemical = 0;
+		double perturb_amp = 0.1; // amplitude
+		double[] perturb_t = {2.13,2.5}; // start time, end time
+		double[] perturb_loc = {4,2,0.5,0.5};// center, diameter 
+		double perturb_mid_t = (perturb_t[0]+perturb_t[1])/2, perturb_lifetime = perturb_t[1]-perturb_t[0];
+		
 		// time step
-		for (int k=1; k<(groupt*T+1); k++){
+		for (int k=0; k<(groupt*T); k++){
 			// each time point start
-			///*
+			// perturb
+			double t = ((double)(k-1))/groupt;
+			if ((t>perturb_t[0])&&(t<perturb_t[1])){
+				double amp_scale = 1 - Math.abs(t-perturb_mid_t) / (perturb_lifetime/2.0);
+				data_t[perturb_chemical].square_perturbation(perturb_amp * amp_scale, perturb_loc, hs);
+			}
+			/**/
+			// react
 			for (int i=0; i<I; i++){
 				for (int j=0; j<J; j++){
 					double[] cell = new double[n_chemical];
@@ -64,17 +76,21 @@ public class Model_rd2d implements Serializable{
 					}
 				}
 			}
-			//*/
+			// diffuse
 			for (int s=0; s<n_chemical; s++){
 				data_t[s] = diffuse_ADI(data_t[s], M[s]);
 			// each time point end
 			}
+			for (int s=0; s<n_chemical; s++){
+				this.data[k][s] = data_t[s].copy();
+			}
+				/*
 			if (k%groupt==0){
 				System.out.println(k);
 				for (int s=0; s<n_chemical; s++){
 					this.data[k/groupt][s] = data_t[s].copy();
 				}
-			}
+			}*/
 		}
 	}
 	@Override
@@ -94,13 +110,9 @@ public class Model_rd2d implements Serializable{
 		double[] k_R = {0.95087765,  0.38947365,  0.86932719,  0.1       ,  0.        ,  0. };
 		double[] c0 = {0.092118289828982902, 1, 0.092118289828982902};
 		Model_rd2d m = new Model_rd2d(k_D,k_R,c0);
-		m.run(5);
-		new Visualization(m.data, m.data_rescale(0.1), Arrays.toString(m.k_D)+";"+Arrays.toString(m.k_R));
+		m.run(10);
+		new Visualization(m.data, m.data_rescale(0.2), Arrays.toString(m.k_D)+";"+Arrays.toString(m.k_R));
 		//System.out.println(Arrays.deepToString());
-		/*
-		for (int t = 0; t<100; t++){
-			c0 = m.RK4(c0, 0.01);
-			System.out.println(Arrays.toString(c0));*/
 		}
 		//Model_rd2d m = new Model_rd2d(5,k_D,k_R);
 		//new Visualization(m.data,Arrays.toString(m.k_D)+";"+Arrays.toString(m.k_R));
@@ -126,14 +138,15 @@ public class Model_rd2d implements Serializable{
 					data_min_max[s][1] = temp[1];
 				}
 			}
+			System.out.print(Arrays.toString(data_min_max[s])+";");
+
 			if (c0[s] - data_min_max[s][0]<thresh){
 				data_min_max[s][0] = c0[s] - thresh;
 			}
 			if (data_min_max[s][1]-c0[s]<thresh){
 				data_min_max[s][1] = c0[s] + thresh;
 			}
-			//data_min_max[s][0] -= 0.01;
-			//data_min_max[s][1] += 0.01;
+			System.out.print(Arrays.toString(data_min_max[s])+"\n");
 		}
 		return data_min_max;
 	}
