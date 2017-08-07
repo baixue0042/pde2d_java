@@ -2,6 +2,7 @@ package rd2d;
 import java.io.Serializable;
 
 import Jama.Matrix;
+import ij.process.FloatProcessor;
 
 public class Grid extends Matrix implements Serializable{
 	public Grid(int m, int n){
@@ -66,6 +67,18 @@ public class Grid extends Matrix implements Serializable{
 		}
 		return min_max;
 	}
+	public FloatProcessor getFloatProcessor(){
+		int I = this.getRowDimension(), J = this.getColumnDimension();
+		float[] pixels = new float[I*J];
+		for (int i=0; i<I; i++){
+			for (int j=0; j<J; j++){
+				pixels[i*J+j] = (float) this.get(i,j);
+			}
+		}
+		return new FloatProcessor(J,I,pixels);
+
+	}
+
 	@Override
 	public Grid copy(){
 		return new Grid(this.getArrayCopy());
