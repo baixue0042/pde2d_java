@@ -1,17 +1,12 @@
 package rd2d;
 
-import ij.IJ;
-import ij.ImageJ;
 import ij.ImagePlus;
 import ij.ImageStack;
 import ij.gui.StackWindow;
-import ij.process.FloatProcessor;
 
 import java.awt.event.AdjustmentEvent;
 import java.awt.event.AdjustmentListener;
 import java.awt.event.WindowEvent;
-import java.awt.geom.GeneralPath;
-import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Scrollbar;
 import java.awt.Frame;
@@ -20,16 +15,26 @@ import java.awt.event.WindowAdapter;
 public class SyncWindow{
 	StackWindow[] windows;
 	Frame f;
-	public SyncWindow(Model_rd2d m) {
+	public SyncWindow(Model_rd2d m, double hs, double ht) {
 		Grid[][] data = m.data;
 		int I = data[0][0].getRowDimension(),J = data[0][0].getColumnDimension(), T= data.length, n_chemical=data[0].length;
 		windows = new StackWindow[n_chemical];
+		double stkmin=0, stkmax=0; double[] min_max;
 		for (int s=0; s<n_chemical; s++){
 			ImageStack stk = new ImageStack(J,I);
 			for (int t=0; t<T; t++){
 				stk.addSlice(data[t][s].getFloatProcessor());
+				min_max = data[t][s].min_max();
+				if (stkmin>min_max[0]){
+					stkmin = min_max[0];
+				}
+				if (stkmax<min_max[1]){
+					stkmax = min_max[1];
+				}
 			}
-			ImagePlus imp = new ImagePlus(m.getInfoChemical(s), stk);
+			//ImagePlus imp = new ImagePlus(m.getInfoChemical(s), stk);
+			ImagePlus imp = new ImagePlus(""+s, stk);
+			imp.setDisplayRange(stkmin, stkmax);
 			windows[s] = new StackWindow(imp);
 		}
 		
@@ -37,8 +42,7 @@ public class SyncWindow{
 		Dimension originalsize= windows[0].getPreferredSize();
 		double scalefactor = height/n_chemical / originalsize.getHeight();
 		for (int i=0; i<windows.length; i++){
-			windows[i].setLocation(0,i*height/n_chemical);
-			windows[i].setSize((int)(scalefactor * originalsize.getWidth()), height/n_chemical);
+			windows[i].setLocationAndSize(0,i*height/n_chemical,(int)(scalefactor * originalsize.getWidth()), height/n_chemical);
 		}
 		
 		final Scrollbar hbar = new Scrollbar(Scrollbar.HORIZONTAL, 0, 1, 0, T);
@@ -47,6 +51,7 @@ public class SyncWindow{
 		f.setSize(width/2, 80);
 		f.add(hbar);
 		f.setVisible(true);
+		
 		f.addWindowListener(new WindowAdapter() {
 			@Override
 			public void windowClosing(WindowEvent we) {
@@ -56,6 +61,8 @@ public class SyncWindow{
 				}
 			}
 		});
+		
+		
 	}
 	
 	class MyAdjustmentListener implements AdjustmentListener {

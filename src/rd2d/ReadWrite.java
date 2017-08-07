@@ -15,13 +15,13 @@ public class ReadWrite {
 			FileOutputStream f = new FileOutputStream(new File(fileName));
 			ObjectOutputStream o = new ObjectOutputStream(f);
 			o.writeObject(m);
-			//System.out.println(this.toString());
+			//System.out.println(m.toString());
 			o.close();
 			f.close();
 		} catch (FileNotFoundException e) {
-			System.out.println("File not found");
+			e.printStackTrace();
 		} catch (IOException e) {
-			System.out.println("Error initializing stream");
+			e.printStackTrace();
 		} 
 	}
 	public Model_rd2d reader(String fileName){
@@ -33,12 +33,13 @@ public class ReadWrite {
 			oi.close();
 			fi.close();
 		} catch (FileNotFoundException e) {
-			System.out.println("File not found");
+			e.printStackTrace();
 		} catch (IOException e) {
-			System.out.println("End of file");
+			e.printStackTrace();
 		} catch (ClassNotFoundException e) {
 			e.printStackTrace();
 		}
+		//System.out.println(m.toString());
 		return m;
 	}
 

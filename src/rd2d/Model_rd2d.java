@@ -8,60 +8,63 @@ import Jama.Matrix;
 
 public class Model_rd2d extends Model0 implements Serializable{
 	double[] k_D;
-	double hs,ht;
+	double spanI,spanJ,hs,ht;
 	int I,J,group;
-	Perturbation perturb;
 	Grid[][] data;
-	Matrix[][] M;
 	public Model_rd2d(){super();}
 	
-	public void setSpatialParameter(double[] k_D, double p_amp){
+	public void setSpatialParameter(double[] k_D){
 		this.k_D = k_D;//k_D: diffusion coefficient, unit micrometers**2/sec
-		double spanI= 8, spanJ = 4, hs = 0.1;//unit micrometers
-		I=(int) (spanI/hs); J = (int) (spanJ/hs);
+		this.spanI= 20; this.spanJ = 10; this.hs = 0.1;//unit micrometers
+		this.I=(int) (this.spanI/this.hs); this.J = (int) (this.spanJ/this.hs);
 		double temp = 0.5 * (hs * hs) / array_max(k_D);  // characteristic time step based on diffusion
 		this.group = (int) Math.ceil(1.0 / temp); // number of steps for 1 second
 		this.ht = 1.0 / this.group; // time step, unit seconds
-		// setup perturbation
-		double p_start = 0, p_end = 1;
-		double[] p_loc = new double[4];
-		p_loc[0] = spanI*0.5; p_loc[1] = spanJ*0.5; p_loc[2] = spanI*0.05; p_loc[3] = spanI*0.05; // centerx, centery, widthx, widthy
-		this.perturb = new Perturbation(0, p_amp, p_start, p_end, p_loc);//int chemical, double amp, double t_start, double t_end, double[] loc
-		// setup diffusion matrix
-		this.M = new Matrix[n_chemical][4];
-		for (int s=0; s<n_chemical; s++){
-			this.M[s] = diffuse_ADI_matrix(I,J,hs,this.ht,k_D[s]);
-		}
 	}
 	
-	public void run(boolean flag){
+	public void run(double p_amp, boolean flag){
 		/* if flag==True, run perturb-reaction-diffusion
 		 * if flag==False, run perturb (visualize perturbation)
 		 */
 		// initial condition
-		this.data = new Grid[this.T][n_chemical]; // data dimension: time, chemicals
+		this.data = new Grid[this.group*this.T][n_chemical]; // data dimension: time, chemicals
 		Grid[] data_t = new Grid[n_chemical];
 		for (int s=0; s<n_chemical; s++){// initialize with homogenous concentration
 			data_t[s] = new Grid(I,J,this.c0[s]);
 		}
+		// setup perturbation
+		double p_start = 0.1, p_end = 6;
+		double[] p_loc = new double[4];
+		p_loc[0] = this.spanI*0.5; p_loc[1] = this.spanJ*0.5; p_loc[2] = this.spanI*0.08; p_loc[3] = this.spanI*0.04; // centerx, centery, widthx, widthy
+		Perturbation perturb = new Perturbation(0, p_amp/this.group, p_start, p_end, p_loc, this.hs);//int chemical, double amp, double t_start, double t_end, double[] loc
+		
+		// setup diffusion matrix
+		Matrix[][] M = new Matrix[n_chemical][4];
+		for (int s=0; s<n_chemical; s++){
+			M[s] = diffuse_ADI_matrix(I,J,this.hs,this.ht,k_D[s]);
+		}
+		
 		// time step
 		for (int k=0; k<(this.group*this.T); k++){
-			data_t = this.perturb.getValue(data_t,((double)k)/this.group, this.hs);
+			data_t = perturb.getValue(data_t,((double)k)/this.group);
 			if (flag){
-				data_t = react_diffuse(data_t);
+				data_t = react_diffuse(data_t,M);
 			}
+			for (int s=0; s<n_chemical; s++){
+				this.data[k][s] = data_t[s].copy();
+			}
+
+			/*
 			// whether to save current result
 			if (k%this.group==0){
 				System.out.println(k);
 				for (int s=0; s<n_chemical; s++){
 					this.data[k/this.group][s] = data_t[s].copy();
 				}
-			}// end save result
-		}// end time step
-		// save simulation result
-		(new ReadWrite()).writer(this.path+this.getInfo(), this);
+			}*/
+		}// end time step		
 	}
-	public Grid[] react_diffuse(Grid[] data_t){
+	public Grid[] react_diffuse(Grid[] data_t, Matrix[][] M){
 		// react
 		for (int i=0; i<I; i++){
 			for (int j=0; j<J; j++){
@@ -77,7 +80,7 @@ public class Model_rd2d extends Model0 implements Serializable{
 		}
 		// diffuse
 		for (int s=0; s<n_chemical; s++){
-			data_t[s] = diffuse_ADI(data_t[s], this.M[s]);
+			data_t[s] = diffuse_ADI(data_t[s], M[s]);
 		}
 		return data_t;
 	}
@@ -143,11 +146,11 @@ public class Model_rd2d extends Model0 implements Serializable{
 		return Arrays.toString(this.k_D)+";"+Arrays.toString(this.k_R)+";"+Arrays.toString(this.c0);
 	}
 	public String getInfoChemical(int s){
-		return Arrays.toString(k_R)+";"+k_D[s]+";"+c0[s];
+		return Arrays.toString(this.k_R)+";"+this.k_D[s]+";"+this.c0[s];
 	}
 	@Override
 	public String toString() {
-		String string = this.getInfo();
+		String string = Arrays.toString(this.k_D)+";"+Arrays.toString(this.k_R)+";"+Arrays.toString(this.c0);
 		for (int t = 0; t<this.data.length; t++){
 			for (int s = 0; s<this.data[t].length; s++){
 				string += (this.data[t][s].toString()+";");
