@@ -1,42 +1,68 @@
 package rd2d;
 
-import java.io.Serializable;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.nio.file.Path;
+import java.nio.file.Files;
+import java.nio.file.FileSystems;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 
 import Jama.Matrix;
+import ij.ImageStack;
 
-abstract class Integrate2d implements Serializable{
+abstract class Integrate2d{
 	int T,n_chemical,I,J,group;
 	double spanI,spanJ,hs,ht;
 	double[] k_R, c0,k_D;
 	ArrayList<double[]> perturb;
-	String path;
-	Grid[][] data;
+	String path,id;
 	abstract Grid[] getPerturbValue(double[] p, Grid[] data_t, double t);
 	abstract Matrix f_R(Matrix u);
+	abstract String headInfo();
 	
-	public Integrate2d(){super();}
-	
+	public Integrate2d(){}
+
 	public void integrate(boolean flag){
 		/* if flag==True, run perturb-reaction-diffusion
 		 * if flag==False, run perturb (visualize perturbation)
 		 */
+
 		// initial condition
-		this.data = new Grid[this.group*this.T][n_chemical]; // data dimension: time, chemicals
 		Grid[] data_t = new Grid[n_chemical];
 		for (int s=0; s<n_chemical; s++) data_t[s] = new Grid(I,J,this.c0[s]); // initialize with homogenous concentration
-		
+
 		// setup diffusion matrix
 		Matrix[][] M = new Matrix[n_chemical][4];
 		for (int s=0; s<n_chemical; s++) M[s] = diffuse_ADI_matrix(I,J,this.hs,this.ht,k_D[s]);
 		
-		// time step
-		for (int k=0; k<(this.group*this.T); k++){
-			for (double[] p : this.perturb) data_t = this.getPerturbValue(p, data_t, ((double)k)/this.group);
-			if (flag) data_t = react_diffuse(data_t,M);
-			for (int s=0; s<n_chemical; s++) this.data[k][s] = data_t[s].copy();
-		}
+		
+		try {
+			Path path = FileSystems.getDefault().getPath(this.path,this.id);
+			Files.deleteIfExists(path);
+			FileOutputStream fout = new FileOutputStream(new File(this.path+this.id),true);
+			ObjectOutputStream oout = new ObjectOutputStream(fout);
+			// time step
+			for (int k=0; k<(this.group*this.T); k++){
+				for (double[] p : this.perturb) data_t = this.getPerturbValue(p, data_t, ((double)k)/this.group);
+				if (flag) data_t = react_diffuse(data_t,M);
+				for (int s=0; s<n_chemical; s++) oout.writeObject(data_t[s].getArray());//write to file
+				System.out.println(data_t[0].getArray() instanceof double[][]);
+			}
+			oout.close();
+			fout.close();
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		} 
+
 	}
 	
 	public Grid[] react_diffuse(Grid[] data_t, Matrix[][] M){
@@ -115,15 +141,4 @@ abstract class Integrate2d implements Serializable{
 		return new Grid(U2);
 	}
 	
-	@Override
-	public String toString() {
-		String string = Arrays.toString(this.k_D)+";"+Arrays.toString(this.k_R)+";"+Arrays.toString(this.c0);
-		string += (this.spanI+";"+this.spanJ+";"+this.hs+";"+this.ht);
-		for (int t = 0; t<this.data.length; t++){
-			for (int s = 0; s<this.data[t].length; s++){
-				string += (this.data[t][s].toString()+";");
-			}
-		}
-		return string;
-	}
 }

@@ -9,25 +9,14 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
 public class ReadWrite {
-	public ReadWrite(){}
-	public void writer(String fileName, Integrate2d m){
-		try {
-			FileOutputStream f = new FileOutputStream(new File(fileName));
-			ObjectOutputStream o = new ObjectOutputStream(f);
-			o.writeObject(m);
-			//System.out.println(m.toString());
-			o.close();
-			f.close();
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
-			e.printStackTrace();
-		} 
+	String filename;
+	public ReadWrite(String fileName) {this.filename = filename;}
+	public void writer(Integrate2d m){
 	}
-	public Integrate2d reader(String fileName){
+	public Integrate2d reader(){
 		Model0 m = new Model0();
 		try {
-			FileInputStream fi = new FileInputStream(new File(fileName));
+			FileInputStream fi = new FileInputStream(new File(this.filename));
 			ObjectInputStream oi = new ObjectInputStream(fi);
 			m = (Model0) oi.readObject();
 			oi.close();

@@ -1,10 +1,8 @@
 package rd2d;
-import java.io.Serializable;
-
 import Jama.Matrix;
 import ij.process.FloatProcessor;
 
-public class Grid extends Matrix implements Serializable{
+public class Grid extends Matrix{
 	public Grid(int m, int n){
 		super(m, n);
 	}
@@ -51,44 +49,11 @@ public class Grid extends Matrix implements Serializable{
 		}
 		this.set(i,j,s);
 	}
-	public double[] min_max(){
-		double[][] arr = this.getArray();
-		double[] min_max = new double[2];
-		min_max[0] = arr[0][0]; min_max[1] = arr[0][0];
-		for (int i=0; i<arr.length; i++){
-			for (int j=0; j<arr[i].length; j++){
-				if (min_max[0]>arr[i][j]){
-					min_max[0] = arr[i][j];
-				}
-				if (min_max[1]<arr[i][j]){
-					min_max[1] = arr[i][j];
-				}
-			}
-		}
-		return min_max;
-	}
-	public FloatProcessor getFloatProcessor(){
-		int I = this.getRowDimension(), J = this.getColumnDimension();
-		float[] pixels = new float[I*J];
-		for (int i=0; i<I; i++){
-			for (int j=0; j<J; j++){
-				pixels[i*J+j] = (float) this.get(i,j);
-			}
-		}
-		return new FloatProcessor(J,I,pixels);
-
-	}
-
-	@Override
-	public Grid copy(){
-		return new Grid(this.getArrayCopy());
-	}
-	@Override
 	public String toString() {
 		String s = "";
 		for (int i=0; i<this.getRowDimension(); i++){
 			for (int j=0; j<this.getColumnDimension(); j++){
-				s  += (String.format ("%.3f", this.get(i,j)) + ",");
+				s  += (String.format ("%.4g", this.get(i,j)) + ",");
 			}
 			s += "\n";
 		}

@@ -4,6 +4,13 @@ import java.util.Arrays;
 
 import Jama.Matrix;
 import ij.ImageJ;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.EOFException;
+import java.io.ObjectInputStream;
 import java.util.ArrayList;
 
 public class Model0 extends Integrate2d{
@@ -16,7 +23,7 @@ public class Model0 extends Integrate2d{
 		this.n_chemical = this.c0.length;
 		
 		this.k_D = k_D;//k_D: diffusion coefficient, unit micrometers**2/sec
-		this.spanI= 1; this.spanJ = 1; this.hs = 0.02;//unit micrometers
+		this.spanI= 1; this.spanJ = 1; this.hs = 0.1;//unit micrometers
 		this.I=(int) (this.spanI/this.hs); this.J = (int) (this.spanJ/this.hs);
 		double temp = 0.5 * (hs * hs) / array_max(k_D);  // characteristic time step based on diffusion
 		this.group = (int) Math.ceil(1.0 / temp); // number of steps for 1 second
@@ -52,6 +59,13 @@ public class Model0 extends Integrate2d{
 		u.set(0,0,dAdt); u.set(0,1,dIdt); u.set(0,2,dFdt);
 		return u;
 	}
+	@Override
+	String headInfo() {
+		String string = Arrays.toString(this.k_D)+";"+Arrays.toString(this.k_R)+";"+Arrays.toString(this.c0);
+		string += (this.spanI+";"+this.spanJ+";"+this.hs+";"+this.ht);
+		return string;
+	}
+
 	public static double[] toDouble(String[] string){
 		double[] arr = new double[string.length];
 		for (int i=0; i<string.length; i++) { arr[i] =  Double.parseDouble(string[i]); }
@@ -71,11 +85,36 @@ public class Model0 extends Integrate2d{
 	}
 
 	public static void main(String [] args){
-		String path = "~/Documents/data_working/pde2d/";
+		String path = "~/Documents/data_working/pde2d/1/";
 		path = path.replaceFirst("^~", System.getProperty("user.home"));
-
+		///*
+		try {
+			FileInputStream fin = new FileInputStream(new File(path+"temp"));
+			ObjectInputStream oin = new ObjectInputStream(fin);
+			Object o; boolean typeflag = false;
+			do {
+				o = oin.readObject();
+				if (o instanceof double[][]) {
+					typeflag = true;
+					System.out.println(Arrays.deepToString((double[][]) o));
+				}
+			} while (typeflag);
+			
+			oin.close();
+			fin.close();
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (EOFException e) {
+			// ignore
+		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+		}
+		//*/
+		/*
 		double[] k_D,k_R,c0; int T;
-		String[] info= "0.05,1,0.4,0.5,0.56,0.2,0.025,1;0.0735,0.926,0.588;0.00033,0.033,0.00033;3".split(";");
+		String[] info= "0.05,1,0.4,0.5,0.56,0.2,0.025,1;0.0735,0.926,0.588;0.00033,0.033,0.00033;1".split(";");
 		k_R = toDouble(info[0].split(","));
 		c0 = toDouble(info[1].split(","));
 		k_D = toDouble(info[1].split(","));
@@ -86,11 +125,6 @@ public class Model0 extends Integrate2d{
 		m.setParameters(path, k_R, c0, T, k_D);
 		double chemical=0,amp=0.1,start=0,end=1.5,cpi=0.5,cpj=0.5,cpdi=0.02,cpdj=0.02;
 		m.addPerturb(chemical,amp,start,end,cpi,cpj,cpdi,cpdj);
-		m.integrate(true);
-		(new ReadWrite()).writer(m.path+"temp", m);
-		//*/
-		//Model_rd2d m = (new ReadWrite()).reader("/Users/baixue/Documents/data_working/pde2d/temp");
-		new SyncWindow(m,m.hs,m.ht);
-		//
+		m.integrate(true);*/
 		}
 }
