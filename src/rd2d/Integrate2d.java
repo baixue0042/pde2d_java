@@ -1,89 +1,59 @@
 package rd2d;
 
 import java.io.Serializable;
-
+import java.util.ArrayList;
 import java.util.Arrays;
 
 import Jama.Matrix;
 
-public class Model_rd2d extends Model0 implements Serializable{
-	double[] k_D;
+abstract class Integrate2d implements Serializable{
+	int T,n_chemical,I,J,group;
 	double spanI,spanJ,hs,ht;
-	int I,J,group;
+	double[] k_R, c0,k_D;
+	ArrayList<double[]> perturb;
+	String path;
 	Grid[][] data;
-	public Model_rd2d(){super();}
+	abstract Grid[] getPerturbValue(double[] p, Grid[] data_t, double t);
+	abstract Matrix f_R(Matrix u);
 	
-	public void setSpatialParameter(double[] k_D){
-		this.k_D = k_D;//k_D: diffusion coefficient, unit micrometers**2/sec
-		this.spanI= 20; this.spanJ = 10; this.hs = 0.1;//unit micrometers
-		this.I=(int) (this.spanI/this.hs); this.J = (int) (this.spanJ/this.hs);
-		double temp = 0.5 * (hs * hs) / array_max(k_D);  // characteristic time step based on diffusion
-		this.group = (int) Math.ceil(1.0 / temp); // number of steps for 1 second
-		this.ht = 1.0 / this.group; // time step, unit seconds
-	}
+	public Integrate2d(){super();}
 	
-	public void run(double p_amp, boolean flag){
+	public void integrate(boolean flag){
 		/* if flag==True, run perturb-reaction-diffusion
 		 * if flag==False, run perturb (visualize perturbation)
 		 */
 		// initial condition
 		this.data = new Grid[this.group*this.T][n_chemical]; // data dimension: time, chemicals
 		Grid[] data_t = new Grid[n_chemical];
-		for (int s=0; s<n_chemical; s++){// initialize with homogenous concentration
-			data_t[s] = new Grid(I,J,this.c0[s]);
-		}
-		// setup perturbation
-		double p_start = 0.1, p_end = 6;
-		double[] p_loc = new double[4];
-		p_loc[0] = this.spanI*0.5; p_loc[1] = this.spanJ*0.5; p_loc[2] = this.spanI*0.08; p_loc[3] = this.spanI*0.04; // centerx, centery, widthx, widthy
-		Perturbation perturb = new Perturbation(0, p_amp/this.group, p_start, p_end, p_loc, this.hs);//int chemical, double amp, double t_start, double t_end, double[] loc
+		for (int s=0; s<n_chemical; s++) data_t[s] = new Grid(I,J,this.c0[s]); // initialize with homogenous concentration
 		
 		// setup diffusion matrix
 		Matrix[][] M = new Matrix[n_chemical][4];
-		for (int s=0; s<n_chemical; s++){
-			M[s] = diffuse_ADI_matrix(I,J,this.hs,this.ht,k_D[s]);
-		}
+		for (int s=0; s<n_chemical; s++) M[s] = diffuse_ADI_matrix(I,J,this.hs,this.ht,k_D[s]);
 		
 		// time step
 		for (int k=0; k<(this.group*this.T); k++){
-			data_t = perturb.getValue(data_t,((double)k)/this.group);
-			if (flag){
-				data_t = react_diffuse(data_t,M);
-			}
-			for (int s=0; s<n_chemical; s++){
-				this.data[k][s] = data_t[s].copy();
-			}
-
-			/*
-			// whether to save current result
-			if (k%this.group==0){
-				System.out.println(k);
-				for (int s=0; s<n_chemical; s++){
-					this.data[k/this.group][s] = data_t[s].copy();
-				}
-			}*/
-		}// end time step		
+			for (double[] p : this.perturb) data_t = this.getPerturbValue(p, data_t, ((double)k)/this.group);
+			if (flag) data_t = react_diffuse(data_t,M);
+			for (int s=0; s<n_chemical; s++) this.data[k][s] = data_t[s].copy();
+		}
 	}
+	
 	public Grid[] react_diffuse(Grid[] data_t, Matrix[][] M){
 		// react
 		for (int i=0; i<I; i++){
 			for (int j=0; j<J; j++){
 				double[] cell = new double[n_chemical];
-				for (int s=0; s<n_chemical; s++){
-					cell[s] = data_t[s].get(i,j);
-				}
+				for (int s=0; s<n_chemical; s++) cell[s] = data_t[s].get(i,j);
 				cell = RK4(cell,this.ht);
-				for (int s=0; s<n_chemical; s++){
-					data_t[s].set(i,j,cell[s]);
-				}
+				for (int s=0; s<n_chemical; s++) data_t[s].set(i,j,cell[s]); 
 			}
 		}
 		// diffuse
-		for (int s=0; s<n_chemical; s++){
-			data_t[s] = diffuse_ADI(data_t[s], M[s]);
-		}
+		for (int s=0; s<n_chemical; s++) data_t[s] = diffuse_ADI(data_t[s], M[s]);
 		return data_t;
 	}
+	
 	public double[] RK4(double[] v, double ht){
 		// dimension of u: 1xn_chemical
 		Matrix u = new Matrix(v,1);
@@ -98,6 +68,7 @@ public class Model_rd2d extends Model0 implements Serializable{
 		}
 		return B.times(K).times(ht).plus(u).getRowPackedCopy();
 	}
+	
 	public Matrix[] diffuse_ADI_matrix(int I, int J, double hs, double ht, double k_D){
 		double alpha = 2*hs*hs/(k_D*ht);
 		Grid matII = new Grid(I,I), matJJ = new Grid(J,J), matMII = new Grid(I,I), matMJJ = new Grid(J,J);
@@ -120,6 +91,7 @@ public class Model_rd2d extends Model0 implements Serializable{
 		X[3] = matJJ.times(alpha).minus(matMJJ).inverse();
 		return X;
 	}
+	
 	public Grid diffuse_ADI(Grid U0, Matrix[] X){
 		int I = U0.getRowDimension(), J = U0.getColumnDimension();
 		Matrix U1 = new Matrix(I,J), U2 = new Matrix(I,J), U = new Matrix(I,J);
@@ -142,15 +114,11 @@ public class Model_rd2d extends Model0 implements Serializable{
 		}
 		return new Grid(U2);
 	}
-	public String getInfo(){
-		return Arrays.toString(this.k_D)+";"+Arrays.toString(this.k_R)+";"+Arrays.toString(this.c0);
-	}
-	public String getInfoChemical(int s){
-		return Arrays.toString(this.k_R)+";"+this.k_D[s]+";"+this.c0[s];
-	}
+	
 	@Override
 	public String toString() {
 		String string = Arrays.toString(this.k_D)+";"+Arrays.toString(this.k_R)+";"+Arrays.toString(this.c0);
+		string += (this.spanI+";"+this.spanJ+";"+this.hs+";"+this.ht);
 		for (int t = 0; t<this.data.length; t++){
 			for (int s = 0; s<this.data[t].length; s++){
 				string += (this.data[t][s].toString()+";");
@@ -158,14 +126,4 @@ public class Model_rd2d extends Model0 implements Serializable{
 		}
 		return string;
 	}
-	double array_max(double[] arr){
-		double vmax = arr[0];
-		for (int i=1; i<arr.length; i++){
-			if (vmax<arr[i]){
-				vmax = arr[i];
-			}
-		}
-		return vmax;
-	}
-
 }

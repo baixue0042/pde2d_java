@@ -17,8 +17,7 @@ public class Grid extends Matrix implements Serializable{
 	public Grid(double[][] A){
 		super(A);
 	}
-	public void square_perturbation(double amp, double[] loc, double hs){
-		int i = (int) (loc[0]/hs), j = (int) (loc[1]/hs), di = (int) (loc[2]/hs), dj = (int) (loc[3]/hs);
+	public void square_perturbation(double amp, int i, int j, int di, int dj){
 		//System.out.println(i+","+j+","+di+","+dj);
 		for (int ii=-di; ii<di; ii++){
 			for (int jj=-dj; jj<dj; jj++){

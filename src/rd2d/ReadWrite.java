@@ -10,7 +10,7 @@ import java.io.ObjectOutputStream;
 
 public class ReadWrite {
 	public ReadWrite(){}
-	public void writer(String fileName, Model_rd2d m){
+	public void writer(String fileName, Integrate2d m){
 		try {
 			FileOutputStream f = new FileOutputStream(new File(fileName));
 			ObjectOutputStream o = new ObjectOutputStream(f);
@@ -24,12 +24,12 @@ public class ReadWrite {
 			e.printStackTrace();
 		} 
 	}
-	public Model_rd2d reader(String fileName){
-		Model_rd2d m = new Model_rd2d();
+	public Integrate2d reader(String fileName){
+		Model0 m = new Model0();
 		try {
 			FileInputStream fi = new FileInputStream(new File(fileName));
 			ObjectInputStream oi = new ObjectInputStream(fi);
-			m = (Model_rd2d) oi.readObject();
+			m = (Model0) oi.readObject();
 			oi.close();
 			fi.close();
 		} catch (FileNotFoundException e) {
