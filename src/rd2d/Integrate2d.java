@@ -22,7 +22,7 @@ class Integrate2d{
 	double spanI,spanJ,hs,ht;
 	double[] k_R, c0,k_D;
 	ArrayList<double[]> perturb;
-	String path,id;
+	String fullfilename;
 	Grid[] data_t;
 	public Integrate2d(){}
 
@@ -39,12 +39,10 @@ class Integrate2d{
 		for (int s=0; s<this.n_chemical; s++) M[s] = diffuse_ADI_matrix(this.I,this.J,this.hs,this.ht,this.k_D[s]);
 		try {
 			// open output stream
-			Path path = FileSystems.getDefault().getPath(this.path,this.id);
-			Files.deleteIfExists(path);
-			FileOutputStream fout = new FileOutputStream(new File(this.path+this.id),true);
+			FileOutputStream fout = new FileOutputStream(new File(this.fullfilename),true);
 			ObjectOutputStream oout = new ObjectOutputStream(fout);
 			// write configuration parameters
-			oout.writeObject(this.c0); oout.writeObject(ht); 
+			oout.writeObject(this.c0); oout.writeObject(ht); oout.writeObject(hs); 
 			oout.writeObject(this.I); oout.writeObject(this.J); oout.writeObject(this.group*this.T); 
 			// time step
 			for (int k=0; k<(this.group*this.T); k++){

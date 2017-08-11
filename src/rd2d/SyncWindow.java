@@ -3,6 +3,7 @@ package rd2d;
 import ij.ImagePlus;
 import ij.ImageStack;
 import ij.gui.StackWindow;
+import ij.gui.ImageCanvas;
 import ij.process.FloatProcessor;
 
 import java.awt.event.AdjustmentEvent;
@@ -16,6 +17,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.awt.Scrollbar;
+import java.awt.Dimension;
 import java.awt.Frame;
 import java.awt.Label;
 import java.awt.GridLayout;
@@ -26,16 +28,16 @@ public class SyncWindow{
 	private Frame frame;
 	private Label statusLabel;
 	private Scrollbar hbar;
-	private double ht;
+	private double ht,hs;
 	private double[] c0,cmin, cmax;
 	private int I,J,K,kstep, n_chemical, width, height;
-	
-	public SyncWindow(String path, String id, int n) {
+	private Dimension canvasSize;
+	public SyncWindow(String fullfilename, int n) {
 		kstep = n;
 		try {
-			FileInputStream fin = new FileInputStream(new File(path+id));
+			FileInputStream fin = new FileInputStream(new File(fullfilename));
 			ObjectInputStream oin = new ObjectInputStream(fin);
-			c0 = (double[]) oin.readObject(); n_chemical = c0.length; ht = (double) oin.readObject(); 
+			c0 = (double[]) oin.readObject(); n_chemical = c0.length; ht = (double) oin.readObject(); hs = (double) oin.readObject(); 
 			I = (int) oin.readObject(); J = (int) oin.readObject(); K = (int) oin.readObject();
 			// create stacks
 			ImageStack[] stks = new ImageStack[n_chemical];
@@ -62,7 +64,7 @@ public class SyncWindow{
 				windows[s] = new StackWindow(imp);
 				windows[s].setLocationAndSize(0, s*movieheight, moviewidth, movieheight);
 			}
-
+			canvasSize = windows[0].getCanvas().getSize();
 			oin.close();
 			fin.close();
 		} catch (FileNotFoundException e) {
@@ -107,6 +109,7 @@ public class SyncWindow{
 		for (int i=0; i<windows.length; i++){
 			windows[i].getCanvas().addMouseListener(new MyMouseListener());
 		}
+		
 	}
 
 	class MyMouseListener implements MouseListener{
@@ -120,7 +123,11 @@ public class SyncWindow{
 		public void mouseExited(MouseEvent e) {}
 		@Override
 		public void mouseClicked(MouseEvent e) {
-			System.out.println("Clicked!");
+			ImageCanvas ic = (ImageCanvas) e.getSource();
+			double x = ((double) e.getX())/canvasSize.height*I*hs, y = ((double) e.getY())/canvasSize.width*J*hs;
+			if (ic==windows[0].getCanvas()) System.out.println(0+"\t"+printd(x)+","+printd(y));
+			if (ic==windows[1].getCanvas()) System.out.println(1+"\t"+printd(x)+","+printd(y));
+			if (ic==windows[2].getCanvas()) System.out.println(2+"\t"+printd(x)+","+printd(y));
 		}
 	}
 	class MyAdjustmentListener implements AdjustmentListener {

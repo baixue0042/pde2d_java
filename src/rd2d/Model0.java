@@ -1,15 +1,22 @@
 package rd2d;
 
 import java.util.Arrays;
+import java.util.ArrayList;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
 
 import Jama.Matrix;
 import ij.ImageJ;
-import java.util.ArrayList;
+
+import ij.io.DirectoryChooser;
+import ij.io.OpenDialog;
 
 public class Model0 extends Integrate2d{
 	public Model0(){}
-	public void setParameters(String path, String id, double[] k_R, double[] c0, int T, double[] k_D, double spanI, double spanJ, double hs){
-		this.path = path; this.id = id;
+	public void setParameters(String fullfilename, double[] k_R, double[] c0, int T, double[] k_D, double spanI, double spanJ, double hs){
+		this.fullfilename = fullfilename;
 		this.k_R = k_R;// reaction parameters
 		this.c0 = c0;// homogenous steady state
 		this.T = T;//T: simulation time, unit seconds
@@ -34,6 +41,7 @@ public class Model0 extends Integrate2d{
 	void setupInfo() {
 		System.out.println("time"+"\t\t"+printd(this.T)+";\t\t"+printd(this.group)+";\t\t"+printd(this.ht));
 		System.out.println("space"+"\t\t"+this.spanI+";\t\t"+this.spanJ+";\t\t"+this.hs);
+		System.out.println("k_R"+"\t\t"+Arrays.toString(this.k_R));
 		System.out.println("k_D"+"\t\t"+Arrays.toString(this.k_D));
 		System.out.println("c0"+"\t\t"+Arrays.toString(this.c0));
 	}
@@ -55,25 +63,49 @@ public class Model0 extends Integrate2d{
 	String printd(double x){
 		return String.format("%.2g",x);
 	}
-
-	public static void main(String [] args){
-		new ImageJ();
+	public static void openResult() {
+		String f = openFile();
+		if (!(f==null)) new SyncWindow(f,1);
+	}
+	public static String openFile() {
 		String path = "~/Documents/data_working/pde2d/";
 		path = path.replaceFirst("^~", System.getProperty("user.home"));
-		/*
-		double[] k_D,k_R,c0,p; int T;
-		String[] info= "0.05,1,0.4,0.5,0.56,0.2,0.025,1;0.0735,0.926,0.588;0.1,1,0.1;0,0.1,0.1,0.2,0.5,0.5,0.05,0.05;10".split(";");
-		k_R = toDouble(info[0].split(","));
-		c0 = toDouble(info[1].split(","));
-		k_D = toDouble(info[2].split(","));
-		p = toDouble(info[3].split(","));
-		T = Integer.parseInt(info[4]);
+		OpenDialog.setDefaultDirectory(path);
+		OpenDialog dilog = new OpenDialog("open result");
+		return path+dilog.getFileName();
+	}
+	public static void runSimulation(String[] info) {
+		String path = "~/Documents/data_working/pde2d/";
+		path = path.replaceFirst("^~", System.getProperty("user.home"));
+		double[] k_D,k_R,c0,p; int T; String filename;
+		filename = info[0];
+		k_R = toDouble(info[1].split(","));
+		c0 = toDouble(info[2].split(","));
+		k_D = toDouble(info[3].split(","));
+		p = toDouble(info[4].split(","));
+		T = Integer.parseInt(info[5]);
 		
 		Model0 m = new Model0();
-		m.setParameters(path, "0", k_R, c0, T, k_D, 5, 5, 0.1);
+		m.setParameters(path+filename, k_R, c0, T, k_D, 5, 5, 0.1);
 		m.perturb.add(p);
 		m.integrate(true);
-		*/
-		new SyncWindow(path, "0",1);
-		}
+		System.out.println("---------------------------------------");
+	}
+	public static void runManySimulations() {
+		File f = new File(openFile());
+		try {
+			BufferedReader b = new BufferedReader(new FileReader(f));
+			String readLine = "";
+            while ((readLine = b.readLine()) != null) {
+                runSimulation(readLine.split(";"));
+            }
+		} catch (IOException e) {
+            e.printStackTrace();
+        }
+	}
+	public static void main(String [] args){
+		//new ImageJ();
+		//runManySimulations();
+		openResult();
+	}
 }
