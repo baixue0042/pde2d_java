@@ -7,15 +7,14 @@ import ij.process.FloatProcessor;
 
 import java.awt.event.AdjustmentEvent;
 import java.awt.event.AdjustmentListener;
-import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.awt.event.WindowEvent;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.ObjectInputStream;
-import java.util.Arrays;
 import java.awt.Scrollbar;
 import java.awt.Frame;
 import java.awt.Label;
@@ -27,41 +26,38 @@ public class SyncWindow{
 	private Frame frame;
 	private Label statusLabel;
 	private Scrollbar hbar;
-	private float ht;
-	private float[] cmin, cmax;
-	private int I,J,K, n_chemical, width, height;
-	public SyncWindow(String id) {
-		width = GetScreenWorkingWidth(); height = GetScreenWorkingHeight();
-		String path = "~/Documents/data_working/pde2d/";
-		path = path.replaceFirst("^~", System.getProperty("user.home"));
+	private double ht;
+	private double[] c0,cmin, cmax;
+	private int I,J,K,kstep, n_chemical, width, height;
+	
+	public SyncWindow(String path, String id, int n) {
+		kstep = n;
 		try {
 			FileInputStream fin = new FileInputStream(new File(path+id));
 			ObjectInputStream oin = new ObjectInputStream(fin);
-			String headinfo = (String) oin.readObject();// read headinfo -> n_chemical,ht,K
+			c0 = (double[]) oin.readObject(); n_chemical = c0.length; ht = (double) oin.readObject(); 
+			I = (int) oin.readObject(); J = (int) oin.readObject(); K = (int) oin.readObject();
 			// create stacks
 			ImageStack[] stks = new ImageStack[n_chemical];
-			for (int s=0; s<n_chemical; s++) stks[s] = new ImageStack();
-			
+			for (int s=0; s<n_chemical; s++) stks[s] = new ImageStack(I,J);
 			// initialize min and max pixel value
-			cmin = new float[n_chemical]; cmax = new float[n_chemical];
-			for (int s=0; s<n_chemical; s++) {
-				double[][] arr = (double[][]) oin.readObject();
-				cmin[s] = (float) arr[0][0]; cmax[s] = (float) arr[0][0];
-				I = arr.length; J = arr[0].length;
-				stks[s].addSlice(arrayToProcessor(arr, s));
-				}
+			cmin = c0.clone(); cmax = c0.clone();
+			
 			// add frames to stacks
-			for (int k=1; k<K; k++) {
+			for (int k=0; k<K; k+=kstep) {
 				for (int s=0; s<n_chemical; s++) {
 					double[][] arr = (double[][]) oin.readObject();
 					stks[s].addSlice(arrayToProcessor(arr, s));
 				}
 			}
 			// create windows
+			width = GetScreenWorkingWidth(); height = GetScreenWorkingHeight();
 			int movieheight = height/n_chemical, moviewidth = movieheight*J/I;
 			windows = new StackWindow[n_chemical];
+			System.out.println("pixel range");
 			for (int s=0; s<n_chemical; s++) {
 				ImagePlus imp = new ImagePlus(""+s, stks[s]);
+				System.out.println(printd(c0[s])+","+printd(cmin[s])+","+printd(cmax[s]));
 				imp.setDisplayRange(cmin[s], cmax[s]);
 				windows[s] = new StackWindow(imp);
 				windows[s].setLocationAndSize(0, s*movieheight, moviewidth, movieheight);
@@ -93,11 +89,11 @@ public class SyncWindow{
 	private void prepareGUI() {
 		hbar = new Scrollbar(Scrollbar.HORIZONTAL, 0, 1, 0, K);
 		hbar.addAdjustmentListener(new MyAdjustmentListener());
-		//hbar.setSize(this.width,40);
-		statusLabel = new Label("0");
-		statusLabel.addKeyListener(new MyKeyListener());
+		statusLabel = new Label("t="+printd(ht));
+		
 		frame = new Frame("scroll bar");
 		frame.setSize(width/2, 80);
+		frame.setLocation(width/4,0);
 		frame.setLayout(new GridLayout(2,1));
 		frame.add(hbar); frame.add(statusLabel);
 		frame.setVisible(true);
@@ -108,17 +104,23 @@ public class SyncWindow{
 				for (int i=0; i<windows.length; i++){ windows[i].close(); }
 			}
 		});
+		for (int i=0; i<windows.length; i++){
+			windows[i].getCanvas().addMouseListener(new MyMouseListener());
+		}
 	}
 
-	class MyKeyListener implements KeyListener{
+	class MyMouseListener implements MouseListener{
 		@Override
-		public void keyTyped(KeyEvent e) {/*do nothing*/}
+		public void mousePressed(MouseEvent e) {}
 		@Override
-		public void keyReleased(KeyEvent e) {/*do nothing*/}
+		public void mouseReleased(MouseEvent e) {}
 		@Override
-		public void keyPressed(KeyEvent e) {
-			if(e.getKeyCode() == KeyEvent.VK_LEFT){ update(hbar.getValue()-1); }
-			if(e.getKeyCode() == KeyEvent.VK_RIGHT){ update(hbar.getValue()+1); }
+		public void mouseEntered(MouseEvent e) {}
+		@Override
+		public void mouseExited(MouseEvent e) {}
+		@Override
+		public void mouseClicked(MouseEvent e) {
+			System.out.println("Clicked!");
 		}
 	}
 	class MyAdjustmentListener implements AdjustmentListener {
@@ -135,7 +137,9 @@ public class SyncWindow{
 		for (int i=0; i<windows.length; i++){
 			windows[i].showSlice(frm);
 		}
-		statusLabel.setText("t="+String.format("%3.3f",frm*ht));
+		statusLabel.setText("t="+printd((frm+1)*ht*kstep));
 	}
-
+	String printd(double x){
+		return String.format("%.3g",x);
+	}
 }
