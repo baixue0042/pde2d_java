@@ -21,9 +21,6 @@ abstract public class Integrate1d {
 	abstract public void addPerturb();
 	abstract public double[] f_R(double[] u);
 	public void integrate(){
-		/* if flag==True, run perturb-reaction-diffusion
-		 * if flag==False, run perturb (visualize perturbation)
-		 */
 		// initial condition
 		this.data_t = new Matrix[this.n_chemical];
 		for (int s=0; s<this.n_chemical; s++) this.data_t[s] = new Matrix(this.I,1,this.c0[s]); // initialize with homogenous concentration
@@ -49,7 +46,7 @@ abstract public class Integrate1d {
 			e.printStackTrace();
 		} catch (IOException e) {
 			e.printStackTrace();
-		} 
+		}
 	}
 	public void react_diffuse(){
 		// react

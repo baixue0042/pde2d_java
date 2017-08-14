@@ -9,8 +9,8 @@ import java.awt.event.AdjustmentEvent;
 import java.awt.event.AdjustmentListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
-import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -22,35 +22,32 @@ import ij.ImageStack;
 import ij.gui.ImageCanvas;
 import ij.gui.StackWindow;
 import ij.process.FloatProcessor;
-import visualization.Data2d.MyAdjustmentListener;
-import visualization.Data2d.MyMouseListener;
 
 public class Data1d {
+	private FloatProcessor[] fp;
 	private StackWindow[] windows;
 	private Frame frame;
 	private Label statusLabel;
-	private Scrollbar hbar;
 	private double ht,hs;
 	private double[] c0,cmin, cmax;
-	private int I,J,K,kstep, n_chemical, width, height;
+	private int I,K, n_chemical, width, height, kstep;
 	private Dimension canvasSize;
-	public Data1d(String fullfilename, int kstep) {
+	
+	public Data1d(String fullfilename, int n) {
+		kstep = n;
 		try {
 			FileInputStream fin = new FileInputStream(new File(fullfilename));
 			ObjectInputStream oin = new ObjectInputStream(fin);
+			//******************** read data start ********************
 			c0 = (double[]) oin.readObject(); n_chemical = c0.length; 
 			ht = (double) oin.readObject(); 
 			hs = (double) oin.readObject(); 
 			I = (int) oin.readObject(); K = (int) oin.readObject();
-			// create 
-			FloatProcessor[] fp = new FloatProcessor[n_chemical];
+
+			cmin = c0.clone(); cmax = c0.clone();// initialize min and max pixel value
+			fp = new FloatProcessor[n_chemical];
 			for (int s=0; s<n_chemical; s++) fp[s] = new FloatProcessor(K/kstep,I);
-			// initialize min and max pixel value
-			cmin = c0.clone(); cmax = c0.clone();
-			
-			// add frames to stacks
 			for (int k=0; k<K; k+=1) {
-				System.out.println(k+","+k/kstep);
 				for (int s=0; s<n_chemical; s++) {
 					double[] arr = (double[]) oin.readObject();
 					for (int i=0; i<I; i++){
@@ -60,19 +57,7 @@ public class Data1d {
 					}
 				}
 			}
-			// create windows
-			width = GetScreenWorkingWidth(); height = GetScreenWorkingHeight();
-			int movieheight = height/n_chemical, moviewidth = movieheight*I/(K/kstep);
-			windows = new StackWindow[n_chemical];
-			System.out.println("pixel range");
-			for (int s=0; s<n_chemical; s++) {
-				ImagePlus imp = new ImagePlus(""+s, fp[s]);
-				System.out.println(printd(c0[s])+","+printd(cmin[s])+","+printd(cmax[s]));
-				imp.setDisplayRange(cmin[s], cmax[s]);
-				windows[s] = new StackWindow(imp);
-				windows[s].setLocationAndSize(0, s*movieheight, moviewidth, movieheight);
-			}
-			canvasSize = windows[0].getCanvas().getSize();
+			//******************** read data end********************
 			oin.close();
 			fin.close();
 		} catch (FileNotFoundException e) {
@@ -86,7 +71,20 @@ public class Data1d {
 		
 	}
 	private void prepareGUI() {
-		statusLabel = new Label("t="+printd(ht));
+		width = GetScreenWorkingWidth(); height = GetScreenWorkingHeight();
+		int movieheight = height/n_chemical, moviewidth = movieheight*(K/kstep)/I;
+		windows = new StackWindow[n_chemical];
+		System.out.println("pixel range");
+		for (int s=0; s<n_chemical; s++) {
+			ImagePlus imp = new ImagePlus(""+s, fp[s]);
+			System.out.println(printd(c0[s])+","+printd(cmin[s])+","+printd(cmax[s]));
+			imp.setDisplayRange(cmin[s], cmax[s]);
+			windows[s] = new StackWindow(imp);
+			windows[s].setLocationAndSize(0, s*movieheight, moviewidth, movieheight);
+		}
+		canvasSize = windows[0].getCanvas().getSize();
+		
+		statusLabel = new Label();
 		
 		frame = new Frame("scroll bar");
 		frame.setSize(width/2, 80);
@@ -94,17 +92,24 @@ public class Data1d {
 		frame.setLayout(new GridLayout(2,1));
 		frame.add(statusLabel);
 		frame.setVisible(true);
-		frame.addWindowListener(new WindowAdapter() {
-			@Override
-			public void windowClosing(WindowEvent we) {
-				frame.dispose();
-				for (int i=0; i<windows.length; i++){ windows[i].close(); }
-			}
-		});
+		frame.addWindowListener(new MyWindowListener());
 		for (int i=0; i<windows.length; i++){
 			windows[i].getCanvas().addMouseListener(new MyMouseListener());
 		}
-		
+
+	}
+	class MyWindowListener implements WindowListener{
+		public void windowActivated(WindowEvent e) {}
+		public void windowClosed(WindowEvent e) {}
+		public void windowDeactivated(WindowEvent e) {}
+		public void windowDeiconified(WindowEvent e) {}
+		public void windowIconified(WindowEvent e) {}
+		public void windowOpened(WindowEvent e) {}
+		public void windowClosing(WindowEvent e) {
+			frame.dispose(); 
+			for (int i=0; i<windows.length; i++) windows[i].close();
+			}
+
 	}
 
 	class MyMouseListener implements MouseListener{
