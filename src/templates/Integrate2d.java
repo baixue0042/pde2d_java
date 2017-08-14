@@ -1,32 +1,24 @@
-package rd2d;
+package templates;
 
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
-import java.nio.file.Path;
-import java.nio.file.Files;
-import java.nio.file.FileSystems;
-
-import java.util.ArrayList;
-import java.util.Arrays;
 
 import Jama.Matrix;
-import ij.ImageStack;
 
-class Integrate2d{
-	int T,n_chemical,I,J,group;
-	double spanI,spanJ,hs,ht;
-	double[] k_R, c0,k_D;
-	ArrayList<double[]> perturb;
-	String fullfilename;
-	Grid[] data_t;
+abstract public class Integrate2d{
+	public int T,n_chemical,I,J,group;
+	public double spanI,spanJ,hs,ht;
+	public double[] k_R, c0,k_D;
+	public String fullfilename;
+	public Grid[] data_t;
 	public Integrate2d(){}
-
-	public void integrate(boolean flag){
+	abstract public void perturb(int k);
+	abstract public Matrix f_R(Matrix u);
+	
+	public void integrate(){
 		/* if flag==True, run perturb-reaction-diffusion
 		 * if flag==False, run perturb (visualize perturbation)
 		 */
@@ -46,8 +38,7 @@ class Integrate2d{
 			oout.writeObject(this.I); oout.writeObject(this.J); oout.writeObject(this.group*this.T); 
 			// time step
 			for (int k=0; k<(this.group*this.T); k++){
-				perturb(k);
-				if (flag) react_diffuse(M);
+				react_diffuse(M);
 				for (int s=0; s<this.n_chemical; s++) oout.writeObject(this.data_t[s].getArrayCopy());//write to file
 			}
 			oout.close();
@@ -57,14 +48,6 @@ class Integrate2d{
 		} catch (IOException e) {
 			e.printStackTrace();
 		} 
-	}
-	public void perturb(int k){
-		for (double[] p : this.perturb) {
-			double start = p[2]*this.group, end = p[3]*this.group;
-			double amp = p[1]*(1.0-Math.abs(k-((start+end)/2))/((end-start)/2));
-			int chemical = (int) p[0], ci = (int) (p[4]*this.I), cj = (int) (p[5]*this.J), di = (int) (p[6]*this.I), dj = (int) (p[7]*this.J);
-			if (amp>0) for (int ii=-di; ii<di; ii++) {for (int jj=-dj; jj<dj; jj++) data_t[chemical].set(ci+ii,cj+jj,amp+data_t[chemical].get(ci+ii,cj+jj));}
-		}
 	}
 	public void react_diffuse(Matrix[][] M){
 		// react
@@ -78,21 +61,6 @@ class Integrate2d{
 		}
 		// diffuse
 		for (int s=0; s<this.n_chemical; s++) this.data_t[s] = diffuse_ADI(this.data_t[s], M[s]);
-	}
-
-	public static double hill(double x,double k0,double k1,double k2, int n){
-		return k0+k1*Math.pow(x, n)/(Math.pow(x, n)+Math.pow(k2, n));
-	}
-
-	public Matrix f_R(Matrix u){
-		// dimension of u: 1x3
-		double[] k = this.k_R;
-		double A=u.get(0,0), I=u.get(0,1), F=u.get(0,2);
-		double dAdt = hill(A,k[0],k[1],k[2],3)*I - hill(F,k[3],k[4],1,1)*A;
-		double dIdt = -dAdt;
-		double dFdt = k[5]*A - k[6]*F;
-		u.set(0,0,dAdt); u.set(0,1,dIdt); u.set(0,2,dFdt);
-		return u;
 	}
 
 	public double[] RK4(double[] v, double ht){
