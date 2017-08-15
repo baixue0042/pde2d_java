@@ -2,17 +2,13 @@ package visualization;
 import java.io.File;
 
 import java.awt.Button;
-import java.awt.Dimension;
 import java.awt.Frame;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.WindowEvent;
-import java.awt.event.WindowListener;
 import javax.swing.JFileChooser;
 
-import ij.ImagePlus;
-import ij.gui.ImageWindow;
+import ij.ImageJ;
 
 public class Viewer{
 	public Button btnOpen;
@@ -26,7 +22,7 @@ public class Viewer{
 	public Viewer(){
 		frame = new Frame("view data");
 		frame.setSize(200, 200);
-		frame.setLocation(100,0);
+		frame.setLocation(400,0);
 		frame.setLayout(new GridLayout(2,1));
 		
 		btnOpen = new Button("Open");
@@ -46,11 +42,15 @@ public class Viewer{
 					chooser.setMultiSelectionEnabled(true);
 					chooser.showOpenDialog(frame);
 					File[] flist = chooser.getSelectedFiles();
-					for (File f : flist) System.out.println(f.getName());
+					for (File f : flist) {
+						System.out.println(f.getName());
+						new Data1d(f.getAbsolutePath(),2);
+					}
 				}
 			}
 		}
 	public static void main(String[] args){
+		new ImageJ();
 		new Viewer();
 	}
 }
