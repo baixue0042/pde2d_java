@@ -2,33 +2,21 @@ package model;
 
 import java.util.Arrays;
 import java.util.ArrayList;
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
 
-import Jama.Matrix;
-import ij.ImageJ;
-
-import ij.io.DirectoryChooser;
-import ij.io.OpenDialog;
-import templates.Integrate1d;
-import visualization.Data2d;
-import visualization.Data1d;
-
-public class Model0 extends Integrate1d{
+public class Model1_1d extends Integrate1d{
 	public double[] p;
-	public Model0(String info){
+	public Model1_1d(String info){
 		String[] S = info.split(";");
 		String path = "~/Documents/data_working/pde2d/";
 		path = path.replaceFirst("^~", System.getProperty("user.home"));
-		this.fullfilename = path+S[0];
+		this.fullfilename = path+"1d_"+S[0]+".dat";
 		this.T = Integer.parseInt(S[1]);//T: simulation time, unit seconds
-		double[] space = Setup.toDouble(S[2].split(",")); this.spanI= space[0]; this.hs = space[1];//unit micrometers
-		this.k_R = Setup.toDouble(S[3].split(","));// reaction parameters
-		this.c0 = Setup.toDouble(S[4].split(","));// homogenous steady state
-		this.k_D = Setup.toDouble(S[5].split(","));//k_D: diffusion coefficient, unit micrometers**2/sec
-		this.p = Setup.toDouble(S[6].split(","));// perturb: chemical, center/diameter in micrometers, amplitude
+		double[] space = Run.toDouble(S[2].split(",")); this.spanI= space[0]; this.hs = space[1];//unit micrometers
+		this.k_R = Run.toDouble(S[3].split(","));// reaction parameters
+		this.c0 = Run.toDouble(S[4].split(","));// homogenous steady state
+		this.k_D = Run.toDouble(S[5].split(","));//k_D: diffusion coefficient, unit micrometers**2/sec
+		this.p = Run.toDouble(S[6].split(","));// perturb: chemical, center/diameter in micrometers, amplitude
 
 		this.n_chemical = this.c0.length;
 		this.I=(int) (this.spanI/this.hs);
@@ -50,7 +38,6 @@ public class Model0 extends Integrate1d{
 	String printd(double x){
 		return String.format("%.2g",x);
 	}
-
 	public void addPerturb(){
 		int chemical=(int) this.p[0], ci=(int) (this.p[1]*this.I), di=(int) (this.p[2]*this.I); double amp=this.p[3];
 		for (int ii=0; ii<di; ii++) data_t[chemical].set(ci+ii,0,amp+data_t[chemical].get(ci+ii,0));

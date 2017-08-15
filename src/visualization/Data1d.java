@@ -20,21 +20,23 @@ import java.io.ObjectInputStream;
 import ij.ImagePlus;
 import ij.ImageStack;
 import ij.gui.ImageCanvas;
-import ij.gui.StackWindow;
+import ij.gui.ImageWindow;
 import ij.process.FloatProcessor;
 
-public class Data1d {
+public class Data1d{
 	private FloatProcessor[] fp;
-	private StackWindow[] windows;
-	private Frame frame;
-	private Label statusLabel;
 	private double ht,hs;
 	private double[] c0,cmin, cmax;
-	private int I,K, n_chemical, width, height, kstep;
-	private Dimension canvasSize;
-	
-	public Data1d(String fullfilename, int n) {
-		kstep = n;
+	public Dimension canvasSize;
+	public int n_chemical, width, height, I, K, kstep;
+	public ImageWindow[] windows;
+
+	public Data1d(String fullfilename) {
+		loadData(fullfilename);
+		prepareGUI();
+		
+	}
+	private void loadData(String fullfilename){
 		try {
 			FileInputStream fin = new FileInputStream(new File(fullfilename));
 			ObjectInputStream oin = new ObjectInputStream(fin);
@@ -43,7 +45,7 @@ public class Data1d {
 			ht = (double) oin.readObject(); 
 			hs = (double) oin.readObject(); 
 			I = (int) oin.readObject(); K = (int) oin.readObject();
-
+			kstep = (int) (0.1/ht);
 			cmin = c0.clone(); cmax = c0.clone();// initialize min and max pixel value
 			fp = new FloatProcessor[n_chemical];
 			for (int s=0; s<n_chemical; s++) fp[s] = new FloatProcessor(K/kstep,I);
@@ -67,77 +69,48 @@ public class Data1d {
 		} catch (ClassNotFoundException e) {
 			e.printStackTrace();
 		}
-		prepareGUI();
-		
 	}
 	private void prepareGUI() {
-		width = GetScreenWorkingWidth(); height = GetScreenWorkingHeight();
+		width = Viewer.GetScreenWorkingWidth(); height = Viewer.GetScreenWorkingHeight();
 		int movieheight = height/n_chemical, moviewidth = movieheight*(K/kstep)/I;
-		windows = new StackWindow[n_chemical];
+		windows = new ImageWindow[n_chemical];
 		System.out.println("pixel range");
 		for (int s=0; s<n_chemical; s++) {
 			ImagePlus imp = new ImagePlus(""+s, fp[s]);
 			System.out.println(printd(c0[s])+","+printd(cmin[s])+","+printd(cmax[s]));
 			imp.setDisplayRange(cmin[s], cmax[s]);
-			windows[s] = new StackWindow(imp);
 			windows[s].setLocationAndSize(0, s*movieheight, moviewidth, movieheight);
+			windows[s].getCanvas().addMouseListener(new MyMouseListener());
+			windows[s].addWindowListener(new ImageWindowListener());
 		}
 		canvasSize = windows[0].getCanvas().getSize();
-		
-		statusLabel = new Label();
-		
-		frame = new Frame("scroll bar");
-		frame.setSize(width/2, 80);
-		frame.setLocation(width/4,0);
-		frame.setLayout(new GridLayout(2,1));
-		frame.add(statusLabel);
-		frame.setVisible(true);
-		frame.addWindowListener(new MyWindowListener());
-		for (int i=0; i<windows.length; i++){
-			windows[i].getCanvas().addMouseListener(new MyMouseListener());
-		}
 
 	}
-	class MyWindowListener implements WindowListener{
+
+	class MyMouseListener implements MouseListener{
+		public void mousePressed(MouseEvent e) {}
+		public void mouseReleased(MouseEvent e) {}
+		public void mouseEntered(MouseEvent e) {}
+		public void mouseExited(MouseEvent e) {}
+		public void mouseClicked(MouseEvent e) {
+			ImageCanvas ic = (ImageCanvas) e.getSource();
+			double t = ((double) e.getY())/canvasSize.width*kstep*ht, x = ((double) e.getX())/canvasSize.height*I*hs;
+			if (ic==windows[0].getCanvas()) System.out.println(0+"\t"+printd(t)+","+printd(x));
+			if (ic==windows[1].getCanvas()) System.out.println(1+"\t"+printd(t)+","+printd(x));
+			if (ic==windows[2].getCanvas()) System.out.println(2+"\t"+printd(t)+","+printd(x));
+		}
+	}
+	String printd(double x){
+		return String.format("%.3g",x);
+	}
+	class ImageWindowListener implements WindowListener{
 		public void windowActivated(WindowEvent e) {}
 		public void windowClosed(WindowEvent e) {}
 		public void windowDeactivated(WindowEvent e) {}
 		public void windowDeiconified(WindowEvent e) {}
 		public void windowIconified(WindowEvent e) {}
 		public void windowOpened(WindowEvent e) {}
-		public void windowClosing(WindowEvent e) {
-			frame.dispose(); 
-			for (int i=0; i<windows.length; i++) windows[i].close();
-			}
-
-	}
-
-	class MyMouseListener implements MouseListener{
-		@Override
-		public void mousePressed(MouseEvent e) {}
-		@Override
-		public void mouseReleased(MouseEvent e) {}
-		@Override
-		public void mouseEntered(MouseEvent e) {}
-		@Override
-		public void mouseExited(MouseEvent e) {}
-		@Override
-		public void mouseClicked(MouseEvent e) {
-			ImageCanvas ic = (ImageCanvas) e.getSource();
-			double t = 0, x = ((double) e.getX())/canvasSize.height*I*hs;
-			if (ic==windows[0].getCanvas()) System.out.println(0+"\t"+printd(t)+","+printd(x));
-			if (ic==windows[1].getCanvas()) System.out.println(1+"\t"+printd(t)+","+printd(x));
-			if (ic==windows[2].getCanvas()) System.out.println(2+"\t"+printd(t)+","+printd(x));
-		}
-	}
-	private static int GetScreenWorkingWidth() {
-		return java.awt.GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds().width;
-	}
-	private static int GetScreenWorkingHeight() {
-		return java.awt.GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds().height;
-	}
-	String printd(double x){
-		return String.format("%.3g",x);
+		public void windowClosing(WindowEvent e) {for (int i=0; i<windows.length; i++) windows[i].close();}
 	}
 
 }

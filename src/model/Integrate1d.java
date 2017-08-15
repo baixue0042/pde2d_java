@@ -1,4 +1,4 @@
-package templates;
+package model;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -24,7 +24,7 @@ abstract public class Integrate1d {
 		// initial condition
 		this.data_t = new Matrix[this.n_chemical];
 		for (int s=0; s<this.n_chemical; s++) this.data_t[s] = new Matrix(this.I,1,this.c0[s]); // initialize with homogenous concentration
-		addPerturb();
+		addPerturb();// add perturbation
 		// setup diffusion matrix
 		this.M = new Matrix[this.n_chemical][2];
 		for (int s=0; s<this.n_chemical; s++) diffuse_ADI_matrix(s);
@@ -35,7 +35,7 @@ abstract public class Integrate1d {
 			// write configuration parameters
 			oout.writeObject(this.c0); oout.writeObject(this.ht); oout.writeObject(this.hs); 
 			oout.writeObject(this.I); oout.writeObject(this.group*this.T); 
-			// time step
+			// time step, write concentrations
 			for (int k=0; k<(this.group*this.T); k++){
 				react_diffuse();
 				for (int s=0; s<this.n_chemical; s++) oout.writeObject(this.data_t[s].getRowPackedCopy() );//write to file
@@ -53,7 +53,6 @@ abstract public class Integrate1d {
 		for (int i=0; i<I; i++){
 			double[] temp,k1,k2,k3,k4;
 			temp = new double[this.n_chemical];
-			
 			for (int s=0; s<this.n_chemical; s++) temp[s] = this.data_t[s].get(i,0);
 			k1 = f_R(temp);
 			for (int s=0; s<this.n_chemical; s++) temp[s] = this.data_t[s].get(i,0)+this.ht/2*k1[s];
@@ -79,7 +78,7 @@ abstract public class Integrate1d {
 			this.M[s][1].set(i,periodicIndex(i+1,this.I),1);
 		}
 	}
-	public int periodicIndex(int i, int I){
+	public static int periodicIndex(int i, int I){
 		if (i<0) i += I; 
 		else if (i>(I-1)) i -= I;
 		return i;

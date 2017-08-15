@@ -1,4 +1,4 @@
-package templates;
+package model;
 
 import java.io.File;
 import java.io.FileNotFoundException;
