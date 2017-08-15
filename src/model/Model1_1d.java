@@ -54,5 +54,10 @@ public class Model1_1d extends Integrate1d{
 		dudt[2] = k[5]*A - k[6]*F;
 		return dudt;
 	}
+	public double[] f_ss(double x) {
+		for (double i=Math.pow(10, -6); i<1; i+=0.001) {
+			
+		}
+	}
 
 }
