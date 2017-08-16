@@ -16,9 +16,10 @@ abstract public class Integrate1d {
 	public String fullfilename;
 	public Matrix[] data_t;
 	public Matrix[][] M;
-	public Integrate1d(){}
+	
 	abstract public void addPerturb();
 	abstract public double[] f_R(double[] u);
+	
 	public void integrate(){
 		// initial condition
 		this.data_t = new Matrix[this.n_chemical];
@@ -26,7 +27,7 @@ abstract public class Integrate1d {
 		addPerturb();// add perturbation
 		// setup diffusion matrix
 		this.M = new Matrix[this.n_chemical][2];
-		for (int s=0; s<this.n_chemical; s++) diffuse_ADI_matrix(s);
+		for (int s=0; s<this.n_chemical; s++) diffuse_ADI_matrix_noflux(s);
 		try {
 			// open output stream
 			FileOutputStream fout = new FileOutputStream(new File(this.fullfilename),true);
@@ -76,6 +77,26 @@ abstract public class Integrate1d {
 			this.M[s][1].set(i,periodicIndex(i-1,this.I),1);
 			this.M[s][1].set(i,periodicIndex(i+1,this.I),1);
 		}
+	}
+	public void diffuse_ADI_matrix_noflux(int s){
+		double alpha = 2*this.hs*this.hs/(this.k_D[s]*this.ht);
+		this.M[s][0] = new Matrix(this.I,this.I); this.M[s][1] = new Matrix(this.I,this.I);
+		for (int i=1; i<this.I-1; i++){
+			this.M[s][0].set(i,i,alpha+2);
+			this.M[s][0].set(i,i-1,-1);
+			this.M[s][0].set(i,i+1,-1);
+			this.M[s][1].set(i,i,alpha-2);
+			this.M[s][1].set(i,i-1,1);
+			this.M[s][1].set(i,i+1,1);
+		}
+		this.M[s][0].set(0,0,alpha+2);
+		this.M[s][0].set(0,1,-2);
+		this.M[s][0].set(this.I-1,this.I-1,alpha+2);
+		this.M[s][0].set(this.I-1,this.I-2,-2);
+		this.M[s][1].set(0,0,alpha-2);
+		this.M[s][1].set(0,1,2);
+		this.M[s][1].set(this.I-1,this.I-1,alpha-2);
+		this.M[s][1].set(this.I-1,this.I-2,2);
 	}
 	public static int periodicIndex(int i, int I){
 		if (i<0) i += I; 
