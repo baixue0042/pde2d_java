@@ -13,22 +13,20 @@ abstract public class Integrate2d{
 	public double spanI,spanJ,hs,ht;
 	public double[] k_R, c0,k_D;
 	public String fullfilename;
-	public Grid[] data_t;
+	public Matrix[] data_t;
+	public Matrix[][] M;
+
 	public Integrate2d(){}
-	abstract public void perturb(int k);
-	abstract public Matrix f_R(Matrix u);
+	abstract public void addPerturb();
+	abstract public double[] f_R(double[] u);
 	
 	public void integrate(){
-		/* if flag==True, run perturb-reaction-diffusion
-		 * if flag==False, run perturb (visualize perturbation)
-		 */
-		// initial condition
-		this.data_t = new Grid[this.n_chemical];
-		for (int s=0; s<this.n_chemical; s++) this.data_t[s] = new Grid(this.I,this.J,this.c0[s]); // initialize with homogenous concentration
-		
+		this.data_t = new Matrix[this.n_chemical];
+		for (int s=0; s<this.n_chemical; s++) this.data_t[s] = new Matrix(this.I,this.J,this.c0[s]); // initialize with homogenous concentration
+		addPerturb();// add perturbation
 		// setup diffusion matrix
-		Matrix[][] M = new Matrix[this.n_chemical][4];
-		for (int s=0; s<this.n_chemical; s++) M[s] = diffuse_ADI_matrix(this.I,this.J,this.hs,this.ht,this.k_D[s]);
+		this.M = new Matrix[this.n_chemical][4];
+		for (int s=0; s<this.n_chemical; s++) diffuse_ADI_matrix(s);
 		try {
 			// open output stream
 			FileOutputStream fout = new FileOutputStream(new File(this.fullfilename),true);
@@ -78,30 +76,34 @@ abstract public class Integrate2d{
 		return B.times(K).times(ht).plus(u).getRowPackedCopy();
 	}
 	
-	public Matrix[] diffuse_ADI_matrix(int I, int J, double hs, double ht, double k_D){
-		double alpha = 2*hs*hs/(k_D*ht);
-		Grid matII = new Grid(I,I), matJJ = new Grid(J,J), matMII = new Grid(I,I), matMJJ = new Grid(J,J);
-		for (int i=0; i<I; i++){
-			matII.grid_set(i,i,1);
-			matMII.grid_set(i,i,-2);
-			matMII.grid_set(i,i-1,1);
-			matMII.grid_set(i,i+1,1);
+	public void diffuse_ADI_matrix(int s){
+		double alpha = 2*this.hs*this.hs/(this.k_D[s]*this.ht);
+		
+		Matrix matII = new Matrix(I,I), matJJ = new Matrix(J,J), matMII = new Matrix(I,I), matMJJ = new Matrix(J,J);
+		for (int i=0; i<this.I; i++){
+			matII.set(i,i,1);
+			matMII.set(i,i,-2);
+			matMII.set(i,periodicIndex(i-1,this.I),1);
+			matMII.set(i,periodicIndex(i+1,this.I),1);
 		}
 		for (int j=0; j<J; j++){
-			matJJ.grid_set(j,j,1);
-			matMJJ.grid_set(j,j,-2);
-			matMJJ.grid_set(j,j-1,1);
-			matMJJ.grid_set(j,j+1,1);
+			matJJ.set(j,j,1);
+			matMJJ.set(j,j,-2);
+			matMJJ.set(j,periodicIndex(j-1,this.J),1);
+			matMJJ.set(j,periodicIndex(j+1,this.J),1);
 		}
-		Matrix[] X = new Matrix[4];
-		X[0] = matJJ.times(alpha).plus(matMJJ);
-		X[1] = matII.times(alpha).minus(matMII);
-		X[2] = matII.times(alpha).plus(matMII);
-		X[3] = matJJ.times(alpha).minus(matMJJ).inverse();
-		return X;
+		this.M[s][0] = matJJ.times(alpha).plus(matMJJ);
+		this.M[s][1] = matII.times(alpha).minus(matMII);
+		this.M[s][2] = matII.times(alpha).plus(matMII);
+		this.M[s][3] = matJJ.times(alpha).minus(matMJJ).inverse();
 	}
-	
-	public Grid diffuse_ADI(Grid U0, Matrix[] X){
+	public static int periodicIndex(int i, int I){
+		if (i<0) i += I; 
+		else if (i>(I-1)) i -= I;
+		return i;
+	}
+
+	public void diffuse_ADI(Grid U0, Matrix[] X){
 		int I = U0.getRowDimension(), J = U0.getColumnDimension();
 		Matrix U1 = new Matrix(I,J), U2 = new Matrix(I,J), U = new Matrix(I,J);
 		int[] index = new int[1];

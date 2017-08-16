@@ -16,7 +16,6 @@ abstract public class Integrate1d {
 	public String fullfilename;
 	public Matrix[] data_t;
 	public Matrix[][] M;
-	public Matrix ML,MR;
 	public Integrate1d(){}
 	abstract public void addPerturb();
 	abstract public double[] f_R(double[] u);
