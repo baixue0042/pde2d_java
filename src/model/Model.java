@@ -1,15 +1,21 @@
 package model;
 
-import java.io.File;
 import java.util.Arrays;
+
+import Jama.Matrix;
 
 abstract public class Model {
 	double[] hss,k_R,k_D,p; double hs,ht,spanI,spanJ,T;
 	int I,J,K,n_chemical;
 	String name;
+	Matrix[] data; Matrix[][] M;
+	
 	abstract public double[] f_R(double[] u);
 	abstract public double fss(double x);
 	abstract public void setHSS();
+	abstract public void initialize();
+	abstract public void step();
+
 	
 	public void setParameter(String str){
 		String[] info = str.split(";");
@@ -30,6 +36,7 @@ abstract public class Model {
 		
 		setHSS();
 		
+		System.out.println("name"+"\t\t"+name);
 		System.out.println("time"+"\t\t"+T+";\t\t"+String.format("%.2g",ht));
 		System.out.println("space"+"\t\t"+hs+";\t\t"+spanI+";\t\t"+spanJ);
 		System.out.println("k_R"+"\t\t"+Arrays.toString(k_R));

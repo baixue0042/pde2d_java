@@ -3,10 +3,8 @@ package model;
 import Jama.Matrix;
 
 public interface ReactDiffuse1d {
-	public void initialize();
-	public void step();
 
-	public static Matrix[] react_diffuse(int I, int n_chemical, double ht, Model m, Matrix[][] M, Matrix[] data){
+	public default Matrix[] react_diffuse(int I, int n_chemical, double ht, Model m, Matrix[][] M, Matrix[] data){
 		// react
 		for (int i=0; i<I; i++){
 			double[] temp,k1,k2,k3,k4;
@@ -22,10 +20,11 @@ public interface ReactDiffuse1d {
 			for (int s=0; s<n_chemical; s++) data[s].set(i,0,data[s].get(i,0)+ht/6*(k1[s]+2*k2[s]+2*k3[s]+k4[s]));
 		}
 		// diffuse
-		for (int s=0; s<n_chemical; s++) data[s] = M[s][0].solve(M[s][1].times(data[s]));
+		for (int s=0; s<n_chemical; s++) 
+			data[s] = M[s][0].solve(M[s][1].times(data[s]));
 		return data;
 	}
-	public static Matrix[][] diffuse_ADI_matrix(int I, int n_chemical, double hs, double ht, double[] k_D){
+	public default Matrix[][] diffuse_ADI_matrix(int I, int n_chemical, double hs, double ht, double[] k_D){
 		final Matrix[][] M = new Matrix[n_chemical][2];
 		for (int s=0; s<n_chemical; s++){
 			double alpha = 2*hs*hs/(k_D[s]*ht);
@@ -41,7 +40,7 @@ public interface ReactDiffuse1d {
 		}
 		return M;
 	}
-	public static Matrix[][] diffuse_ADI_matrix_noflux(int I, int n_chemical, double hs, double ht, double[] k_D){
+	public default Matrix[][] diffuse_ADI_matrix_noflux(int I, int n_chemical, double hs, double ht, double[] k_D){
 		final Matrix[][] M = new Matrix[n_chemical][2];
 		for (int s=0; s<n_chemical; s++){
 			double alpha = 2*hs*hs/(k_D[s]*ht);

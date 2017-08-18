@@ -44,7 +44,7 @@ public class Viewer{
 					File[] flist = chooser.getSelectedFiles();
 					for (File f : flist) {
 						System.out.println(f.getName());
-						new Data1d(f.getAbsolutePath(),2);
+						new SingleFrame(f.getAbsolutePath(),2);
 					}
 				}
 			}

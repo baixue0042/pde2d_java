@@ -11,10 +11,8 @@ import java.io.ObjectOutputStream;
 import ij.io.OpenDialog;
 
 public class Run {
-	public static void run(String str, String path){
+	public static void run(String path, Model m){
 		try {
-			// create model
-			Model1_RD1d m = new Model1_RD1d(str);
 			// delete file if already existed
 			File f = new File(path+m.name+".dat");
 			if (f.exists()) f.delete();
@@ -24,11 +22,11 @@ public class Run {
 			// write configuration parameters
 			oout.writeObject(m.hss); 
 			oout.writeObject(m.ht); oout.writeObject(m.K); 
-			oout.writeObject(m.hs); oout.writeObject(m.I); 
+			oout.writeObject(m.hs); oout.writeObject(m.I); oout.writeObject(m.J);
 			// time step, write concentrations
 			for (int k=0; k<m.K; k++){
 				m.step();
-				for (int s=0; s<m.n_chemical; s++) oout.writeObject(m.data[s].getRowPackedCopy() );//write to file
+				for (int s=0; s<m.n_chemical; s++) oout.writeObject(m.data[s].getArrayCopy() );//write to file
 			}
 			oout.close();
 			fout.close();
@@ -64,7 +62,7 @@ public class Run {
 		String path = "~/Documents/data_working/pde2d/";
 		path = path.replaceFirst("^~", System.getProperty("user.home"));
 		String[] runs = readParameters(path);
-		for (String r : runs) run1d(r,path);
+		for (String str : runs) run(path,new Model1_RD1d(str));
 		System.exit(0);
 	}
 }

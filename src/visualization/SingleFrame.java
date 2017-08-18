@@ -25,46 +25,48 @@ import ij.gui.ImageWindow;
 import ij.process.FloatProcessor;
 import ij.measure.Calibration;
 
-public class Data1d{
+public class SingleFrame{
 	private FloatProcessor[] fp;
 	private double ht,hs;
 	private double[] hss,cmin, cmax;
 	public Dimension canvasSize;
-	public int n_chemical, width, height, I, K, kstep;
+	public int n_chemical, width, height, I, J, K, kstep;
 	public ImagePlus[] imps;
 
-	public Data1d(String fullfilename, double dt) {
+	public SingleFrame(String fullfilename, double dt) {
 		loadData(fullfilename, dt);
 		prepareGUI();
 		
 	}
-	private void loadData(String fullfilename,double dt){
+	private void loadData(String path, String name, double dt){
 		
 		try {
-			FileInputStream fin = new FileInputStream(new File(fullfilename));
+			FileInputStream fin = new FileInputStream(new File(path+name));
 			ObjectInputStream oin = new ObjectInputStream(fin);
 			//******************** read data start ********************
 			// read setup info
 			hss = (double[]) oin.readObject(); n_chemical = hss.length; 
-			ht = (double) oin.readObject(); K = (int) oin.readObject();
-			hs = (double) oin.readObject(); I = (int) oin.readObject();
-			kstep = (int) (dt/ht);// default kstep
+			ht = (double) oin.readObject(); K = (int) oin.readObject(); kstep = (int) (dt/ht);// default kstep
+			hs = (double) oin.readObject(); I = (int) oin.readObject(); J = (int) oin.readObject();
+			
+			int P = 1; // 1d data
+			if (name.contains("2d")) P = J/2; // 2d data
+			
 			cmin = hss.clone(); cmax = hss.clone();// initialize min and max pixel value
 			// read image data into Array of FloatProcessor
 			fp = new FloatProcessor[n_chemical];
 			for (int s=0; s<n_chemical; s++) fp[s] = new FloatProcessor(K/kstep,I);
 			for (int k=0; k<K; k+=1) {
 				for (int s=0; s<n_chemical; s++) {
-					double[] arr = (double[]) oin.readObject();
+					double[][] arr = (double[][]) oin.readObject();
 					for (int i=0; i<I; i++){
-							if (cmin[s]>arr[i]) cmin[s]=arr[i];
-							if (cmax[s]<arr[i]) cmax[s]=arr[i];// update min and max pixel value
-							if (k%kstep==0) fp[s].setf(k/kstep,i,(float) arr[i]);
+							if (cmin[s]>arr[i][P-1]) cmin[s]=arr[i][P-1];
+							if (cmax[s]<arr[i][P-1]) cmax[s]=arr[i][P-1];// update min and max pixel value
+							if (k%kstep==0) fp[s].setf(k/kstep,i,(float) arr[i][P-1]);
 					}
 				}
 			}
-			for (int s=0; s<n_chemical; s++) 
-				System.out.println(printd(hss[s])+"\t \t"+printd(cmin[s])+"\t \t"+printd(cmax[s]));
+			for (int s=0; s<n_chemical; s++) System.out.println(printd(hss[s])+"\t \t"+printd(cmin[s])+"\t \t"+printd(cmax[s]));
 			//******************** read data end********************
 			oin.close();
 			fin.close();

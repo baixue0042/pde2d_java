@@ -23,7 +23,7 @@ import java.awt.Label;
 import java.awt.GridLayout;
 import java.awt.event.WindowAdapter;
 
-public class Data2d{
+public class ManyFrame{
 	private StackWindow[] windows;
 	private Frame frame;
 	private Label statusLabel;
@@ -32,7 +32,7 @@ public class Data2d{
 	private double[] c0,cmin, cmax;
 	private int I,J,K,kstep, n_chemical, width, height;
 	private Dimension canvasSize;
-	public Data2d(String fullfilename, int n) {
+	public ManyFrame(String fullfilename, int n) {
 		kstep = n;
 		try {
 			FileInputStream fin = new FileInputStream(new File(fullfilename));
