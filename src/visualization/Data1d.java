@@ -28,7 +28,7 @@ import ij.measure.Calibration;
 public class Data1d{
 	private FloatProcessor[] fp;
 	private double ht,hs;
-	private double[] c0,cmin, cmax;
+	private double[] hss,cmin, cmax;
 	public Dimension canvasSize;
 	public int n_chemical, width, height, I, K, kstep;
 	public ImagePlus[] imps;
@@ -45,12 +45,11 @@ public class Data1d{
 			ObjectInputStream oin = new ObjectInputStream(fin);
 			//******************** read data start ********************
 			// read setup info
-			c0 = (double[]) oin.readObject(); n_chemical = c0.length; 
-			ht = (double) oin.readObject(); 
-			hs = (double) oin.readObject(); 
-			I = (int) oin.readObject(); K = (int) oin.readObject();
+			hss = (double[]) oin.readObject(); n_chemical = hss.length; 
+			ht = (double) oin.readObject(); K = (int) oin.readObject();
+			hs = (double) oin.readObject(); I = (int) oin.readObject();
 			kstep = (int) (dt/ht);// default kstep
-			cmin = c0.clone(); cmax = c0.clone();// initialize min and max pixel value
+			cmin = hss.clone(); cmax = hss.clone();// initialize min and max pixel value
 			// read image data into Array of FloatProcessor
 			fp = new FloatProcessor[n_chemical];
 			for (int s=0; s<n_chemical; s++) fp[s] = new FloatProcessor(K/kstep,I);
@@ -65,7 +64,7 @@ public class Data1d{
 				}
 			}
 			for (int s=0; s<n_chemical; s++) 
-				System.out.println(printd(c0[s])+"\t \t"+printd(cmin[s])+"\t \t"+printd(cmax[s]));
+				System.out.println(printd(hss[s])+"\t \t"+printd(cmin[s])+"\t \t"+printd(cmax[s]));
 			//******************** read data end********************
 			oin.close();
 			fin.close();
