@@ -4,46 +4,43 @@ import java.util.Arrays;
 
 import Jama.Matrix;
 
-abstract public class Model {
-	double[] hss,k_R,k_D,p; double hs,ht,spanI,spanJ,T;
-	int I,J,K,n_chemical;
+abstract public class Model implements ReactDiffuse, Perturb{
+	double[] hss,k_R,k_D,p; double hs,ht,spanI,spanJ;
+	int I,J,K,group,n_chemical;
 	String name;
 	Matrix[] data; Matrix[][] M;
 	
 	abstract public double[] f_R(double[] u);
 	abstract public double fss(double x);
 	abstract public void setHSS();
-	abstract public void initialize();
-	abstract public void step();
-
 	
-	public void setParameter(String str){
-		String[] info = str.split(";");
-		name = info[0];
-		this.k_R = toDouble(info[3].split(","));// reaction parameters
-		
-		double[] space = toDouble(info[2].split(",")); hs = space[0]; spanI= space[1]; spanJ= space[2];//unit micrometers
-		I=(int) (spanI/hs); J=(int) (spanJ/hs);
-		
-		k_D = toDouble(info[4].split(","));//diffusion coefficient, unit micrometers**2/sec
+	public Model(){}
+	public void initialize(String name, double[] time, double[] space, double[] k_R, double[] k_D, double[] perturb){
+		this.name = name; this.k_R = k_R; this.k_D = k_D; this.p = perturb;
+		hs = space[0]; spanI= space[1]; spanJ= space[2]; I=(int) (spanI/hs); J=(int) (spanJ/hs);
 		double k_D_max = k_D[0]; for (int s=1; s<k_D.length; s++) if (k_D_max<k_D[s]) k_D_max=k_D[s];
-		
-		ht = 0.5 * (hs * hs) / k_D_max; // characteristic time step based on diffusion, unit seconds
-		T = Double.parseDouble(info[1]);// simulation time, unit seconds
-		K = (int) (T/ht);
-		
-		p = toDouble(info[5].split(","));// perturb: chemical, center/diameter in micrometers, amplitude
-		
-		setHSS();
-		
-		System.out.println("name"+"\t\t"+name);
-		System.out.println("time"+"\t\t"+T+";\t\t"+String.format("%.2g",ht));
-		System.out.println("space"+"\t\t"+hs+";\t\t"+spanI+";\t\t"+spanJ);
-		System.out.println("k_R"+"\t\t"+Arrays.toString(k_R));
-		System.out.println("k_D"+"\t\t"+Arrays.toString(k_D));
-		System.out.println("HSS"+"\t\t"+Arrays.toString(hss));
-		System.out.println("Perturb"+"\t\t"+Arrays.toString(p));
+		ht = 0.5 * (hs * hs) / k_D_max; group = (int) (time[0]/ht); K = (int) time[1]; 
+		setHSS(); p[1] = p[1]*hss[0];
+		printSetup();
+		data = new Matrix[n_chemical];
+		if (J==0){// 1d case
+			for (int s=0; s<n_chemical; s++) data[s] = new Matrix(I,1,hss[s]);
+			M = this.diffuse_ADI_matrix_1d(I, n_chemical, hs, ht,k_D);
+			data = this.addPerturb_1d(data,p,I);
+		} else {// 2d case
+			for (int s=0; s<n_chemical; s++) data[s] = new Matrix(I,J,hss[s]);
+			M = this.diffuse_ADI_matrix_2d(I, J, n_chemical, hs, ht,k_D);
+			data = this.addPerturb_2d(data,p,I,J);
+		}
 	}
+	public void step(){
+		if (J==0){// 1d case
+			data = this.react_diffuse_1d(I, n_chemical, ht, this, M, data);
+		} else {// 2d case
+			data = this.react_diffuse_2d(I, J, n_chemical, ht, this, M, data);
+		}
+	}
+
 	public double fixpoint(){
 		double fp = 0;
 		double left = Math.pow(10,-6), right = 1-left, tol = Math.pow(10,-4), stepsize = (right-left)/50;
@@ -63,13 +60,16 @@ abstract public class Model {
 			else return RecursiveBisection(left, mid, tolerance);// opposite side
 		}
 	}
-	public static double[] toDouble(String[] string){
-		double[] arr = new double[string.length];
-		for (int i=0; i<string.length; i++) { arr[i] =  Double.parseDouble(string[i]); }
-		return arr;
-	}
 	public static double hill(double x,double k0,double k1,double k2, int n){
 		return k0+k1*Math.pow(x, n)/(Math.pow(x, n)+Math.pow(k2, n));
 	}
-
+	public void printSetup(){
+		System.out.println("name"+"\t\t"+name);
+		System.out.println("time"+"\t\t"+group*K+";\t\t"+String.format("%.4g",ht)+";\t\t"+String.format("%.1f",group*K*ht));
+		System.out.println("space"+"\t\t"+hs+";\t\t"+spanI+";\t\t"+spanJ);
+		System.out.println("k_R"+"\t\t"+Arrays.toString(k_R));
+		System.out.println("k_D"+"\t\t"+Arrays.toString(k_D));
+		System.out.println("HSS"+"\t\t"+Arrays.toString(hss));
+		System.out.println("Perturb"+"\t\t"+Arrays.toString(p));
+	}
 }

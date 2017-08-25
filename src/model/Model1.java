@@ -1,6 +1,7 @@
 package model;
 
-abstract public class Model1 extends Model{
+public class Model1 extends Model{
+	
 	@ Override
 	public void setHSS(){
 		n_chemical = 3;
