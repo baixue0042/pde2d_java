@@ -30,7 +30,7 @@ public class Data2d extends Data{
 				for (int kk=0; kk<K/kstep; kk++)
 					stks[s].setProcessor(new FloatProcessor(I,J),kk+1);
 			}
-			for (int k=0; k<K; k+=1) {
+			for (int k=0; k<K/kstep*kstep; k+=1) {
 				for (int s=0; s<n_chemical; s++) {
 					double[][] arr = (double[][]) oin.readObject();
 					for (int i=0; i<I; i++)

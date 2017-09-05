@@ -25,7 +25,7 @@ public class Data1d extends Data{
 			cmin = hss.clone(); cmax = hss.clone();// initialize min and max pixel value
 			fp = new FloatProcessor[n_chemical];
 			for (int s=0; s<n_chemical; s++) fp[s] = new FloatProcessor(K/kstep,I);
-			for (int k=0; k<K; k+=1) {
+			for (int k=0; k<K/kstep*kstep; k+=1) {
 				for (int s=0; s<n_chemical; s++) {
 					double[][] arr = (double[][]) oin.readObject();
 					for (int i=0; i<I; i++){
