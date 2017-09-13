@@ -16,8 +16,7 @@ public class RunModel {
 		String[] info = str.split(";");
 		String name = info[0];
 		double[] time = toDouble(info[1]), space = toDouble(info[2]), k_R = toDouble(info[3]), k_D = toDouble(info[4]), p = toDouble(info[5]);
-		if (k_R.length==8) m = new Model1(); 
-		else m = new Model2();
+		m = new Model2(); 
 		m.initialize(name,time,space, k_R,k_D,p);
 		long startTime = System.currentTimeMillis();
 		try {
