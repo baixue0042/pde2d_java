@@ -55,8 +55,8 @@ public class RunViewer {
 		double[] info = toDouble(tfInfo.getText());
 		for (File f : flist) {
 			Data data = loadData(f,info);
-			new SyncImageWinodows(data);
-			curvewindow.add_curve_xt(data,0);
+			//new SyncImageWinodows(data);
+			curvewindow.curve_xt(data,0.5);
 		}
 	}
 
