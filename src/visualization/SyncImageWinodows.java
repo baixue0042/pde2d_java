@@ -12,12 +12,12 @@ import ij.ImagePlus;
 import ij.gui.ImageWindow;
 import ij.gui.ImageCanvas;
 
-public class Viewer{
+public class SyncImageWinodows{
 	public OpenStackWindow[] iw; 
 	public Data data;
 	public int n_chemical;
 	
-	public Viewer(Data data){
+	public SyncImageWinodows(Data data){
 		this.data = data; n_chemical = data.n_chemical;
 		ImageWindowListener iwl = new ImageWindowListener(); ImageMouseListener ml = new ImageMouseListener(); StkSyncListener ssl = new StkSyncListener();
 		iw = new OpenStackWindow[n_chemical];
