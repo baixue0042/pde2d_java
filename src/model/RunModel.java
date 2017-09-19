@@ -13,7 +13,8 @@ import ij.io.OpenDialog;
 public class RunModel {
 	public static void run(String path, String str){
 		Model m;
-		String[] info = str.split(";");
+		String[] info = str.split("~");
+		System.out.println(str);
 		String name = info[0];
 		double[] time = toDouble(info[1]), space = toDouble(info[2]), k_R = toDouble(info[3]), k_D = toDouble(info[4]), p = toDouble(info[5]);
 		m = new Model2(); 
@@ -56,17 +57,21 @@ public class RunModel {
 		OpenDialog dilog = new OpenDialog("load parameters");
 		if (dilog.getFileName()==null) System.exit(0);
 		File f = new File(path+dilog.getFileName());
-		String info = "";
+		String info = ""; String[] info_split;
 		try {
 			BufferedReader b = new BufferedReader(new FileReader(f));
-			String line; while ((line = b.readLine()) != null) info+=(line.split(":")[1]+";");
+			String line; 
+			while ((line = b.readLine()) != null) 
+				info+=(line+'~');
 			b.close();
 		} catch (IOException e) { e.printStackTrace(); }
-		return info.split("SPLIT;");
+		info_split = info.split("~;~");
+		return info_split;
 	}
 	public static void main(String[] args){
 		String path = "~/Documents/data_working/pde2d/";
 		path = path.replaceFirst("^~", System.getProperty("user.home"));
+		//readInput(path);
 		for (String str : readInput(path)) run(path,str);
 		System.exit(0);
 	}
