@@ -28,7 +28,7 @@ public class RunViewer {
 	}
 	
 	public File[] chooseFile(){
-		String path = "~/Documents/data_working/pde2d/";
+		String path = "~/Documents/data_working/pde/";
 		path = path.replaceFirst("^~", System.getProperty("user.home"));
 		JFileChooser chooser = new JFileChooser(new File(path));
 		chooser.setMultiSelectionEnabled(true);
@@ -55,11 +55,15 @@ public class RunViewer {
 		double[] info = toDouble(tfInfo.getText());
 		for (File f : flist) {
 			Data data = loadData(f,info);
+			Curve_xt c_mid=new Curve_xt(data,0.5);
+			System.out.println(data.name+","+c_mid.ymin+","+c_mid.ymax+","+c_mid.x_ymax+","+c_mid.ymax/c_mid.ymin);
+			Curve_xt c_edge=new Curve_xt(data,0);
+			System.out.println(data.name+","+c_edge.ymin+","+c_edge.ymax+","+c_edge.x_ymax+","+c_edge.ymax/c_edge.ymin);
+
 			new SyncImageWinodows(data);
-			Curve_xt c=new Curve_xt(data,0.5);
-			curvewindow.add_curve(c);
-			curvewindow.displayPlotWindow();
+			//curvewindow.add_curve(c); 
 		}
+		curvewindow.displayPlotWindow();
 	}
 
 	public class BtnListener implements ActionListener {

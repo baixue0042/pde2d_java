@@ -17,7 +17,7 @@ public class Data1d extends Data{
 			ObjectInputStream oin = new ObjectInputStream(fin);
 			//******************** read data start ********************
 			// read setup info
-			hss = (double[]) oin.readObject(); n_chemical = hss.length; 
+			k_R = (double[]) oin.readObject(); hss = (double[]) oin.readObject(); n_chemical = hss.length; 
 			ht = (double) oin.readObject(); K = (int) oin.readObject(); kstep = (int) (dt/ht);// default kstep
 			hs = (double) oin.readObject(); I = (int) oin.readObject(); J = (int) oin.readObject();
 			int JJ = (int) (J*colum);

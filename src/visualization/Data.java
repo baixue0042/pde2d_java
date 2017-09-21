@@ -7,7 +7,7 @@ import java.awt.Dimension;
 abstract public class Data {
 	public String name;
 	public double ht,hs;
-	double[] hss,cmin, cmax;
+	double[] k_R,hss,cmin, cmax;
 	public int n_chemical, width, height, I, J, K, kstep, dimension;
 	public FloatProcessor[] fp; public ImageStack[] stks;
 	abstract public String mouseInfo(int Z, int mouseX, int mouseY, Dimension canvas);

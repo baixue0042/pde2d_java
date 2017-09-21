@@ -28,7 +28,7 @@ public class RunModel {
 			FileOutputStream fout = new FileOutputStream(f,true);
 			ObjectOutputStream oout = new ObjectOutputStream(fout);
 			// write configuration parameters
-			oout.writeObject(m.hss); 
+			oout.writeObject(m.k_R); oout.writeObject(m.hss); 
 			oout.writeObject(m.ht*m.group); oout.writeObject(m.K); 
 			oout.writeObject(m.hs); oout.writeObject(m.I); oout.writeObject(m.J);
 			// time step, write concentrations
@@ -69,7 +69,7 @@ public class RunModel {
 		return info_split;
 	}
 	public static void main(String[] args){
-		String path = "~/Documents/data_working/pde2d/";
+		String path = "~/Documents/data_working/pde/";
 		path = path.replaceFirst("^~", System.getProperty("user.home"));
 		//readInput(path);
 		for (String str : readInput(path)) run(path,str);
