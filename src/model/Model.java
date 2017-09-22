@@ -20,7 +20,7 @@ abstract public class Model implements ReactDiffuse, Perturb{
 		hs = space[0]; spanI= space[1]; spanJ= space[2]; I=(int) (spanI/hs); J=(int) (spanJ/hs);
 		double k_D_max = k_D[0]; for (int s=1; s<k_D.length; s++) if (k_D_max<k_D[s]) k_D_max=k_D[s];
 		ht = 0.5 * (hs * hs) / k_D_max; group = (int) (time[0]/ht); K = (int) time[1]; 
-		setHSS(); p[1] = p[1]*hss[0];
+		setHSS();
 		printSetup();
 		data = new Matrix[n_chemical];
 		if (J==0){// 1d case

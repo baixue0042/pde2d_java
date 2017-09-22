@@ -45,8 +45,7 @@ public class Data1d extends Data{
 		} catch (ClassNotFoundException e) {
 			e.printStackTrace();
 		}
-		for (int s=0; s<n_chemical; s++) 
-			System.out.println(printd(hss[s])+"\t \t"+printd(cmin[s])+"\t \t"+printd(cmax[s]));
+		//for (int s=0; s<n_chemical; s++) System.out.println(printd(hss[s])+"\t \t"+printd(cmin[s])+"\t \t"+printd(cmax[s]));
 	}
 	public String mouseInfo(int Z, int mouseX, int mouseY, Dimension canvas){
 		int x = (int) ((double)mouseX*K/kstep/canvas.width);

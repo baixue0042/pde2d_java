@@ -6,7 +6,7 @@ public interface Perturb {
 	default public Matrix[] addPerturb_1d(Matrix[] data, double[] p, int I){
 		double amp=p[1];
 		int chemical=(int) p[0], ci=(int) (p[2]*I), di=(int) (p[3]*I); 
-		for (int ii=0; ii<di; ii++) data[chemical].set(ci+ii,0,amp+data[chemical].get(ci+ii,0));
+		for (int ii=-di; ii<di; ii++) data[chemical].set(ci+ii,0,amp+data[chemical].get(ci+ii,0));
 		return data;
 	}
 	

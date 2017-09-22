@@ -56,12 +56,20 @@ public class RunViewer {
 		for (File f : flist) {
 			Data data = loadData(f,info);
 			Curve_xt c_mid=new Curve_xt(data,0.5);
-			System.out.println(data.name+","+c_mid.ymin+","+c_mid.ymax+","+c_mid.x_ymax+","+c_mid.ymax/c_mid.ymin);
-			Curve_xt c_edge=new Curve_xt(data,0);
-			System.out.println(data.name+","+c_edge.ymin+","+c_edge.ymax+","+c_edge.x_ymax+","+c_edge.ymax/c_edge.ymin);
-
-			new SyncImageWinodows(data);
-			//curvewindow.add_curve(c); 
+			int classified;
+			if (c_mid.whether_magnified()) {//whether center magnified
+				Curve_xt c_edge=new Curve_xt(data,0);
+				curvewindow.add_curve(c_edge); 
+				if (c_edge.ymax<1.5) {//whether edge is excited
+					classified=2;//center magnified & edge is not excited: localized pulse
+					new SyncImageWinodows(data);
+				} else {
+					classified=1;//center magnified & edge is excited: traveling pulse
+				}
+			} else {
+				classified=0;//center not magnified: nothing
+			}
+			System.out.println(data.k_R[0]+","+data.k_R[1]+","+data.k_R[2]+","+classified);
 		}
 		curvewindow.displayPlotWindow();
 	}
