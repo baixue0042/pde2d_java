@@ -72,7 +72,7 @@ public class RunModel {
 		String path = "~/Documents/data_working/pde/";
 		path = path.replaceFirst("^~", System.getProperty("user.home"));
 		//readInput(path);
-		for (String str : readInput(path)) run(path,str);
+		for (String str : readInput(path)) run(path+"raw/",str);
 		System.exit(0);
 	}
 }
