@@ -65,16 +65,16 @@ public class Detect {
 	public void thresh(String infoThresh, String path){
 		ImagePlus imp = IJ.getImage();
 		ImageStack stk = imp.getImageStack();
-		ArrayList<Polygon> stkPolygon = new ArrayList<Polygon>();
-		ArrayList<Integer> stkPolygonFrm = new ArrayList<Integer>();
+		ArrayList<PolygonRoi> stkRoi = new ArrayList<PolygonRoi>();
 		int THRESHVALUE = Integer.valueOf(infoThresh);
 		for (int frm=1; frm<stk.getSize()+1; frm++){
 			ImageProcessor ip = stk.getProcessor(frm);
 			ByteProcessor bp = ip.convertToByteProcessor();
 			bp.threshold(THRESHVALUE);
 			for (Polygon p : traceBlobs(bp, frm)) {
-				stkPolygon.add(p);
-				stkPolygonFrm.add(frm);
+				PolygonRoi roi = new PolygonRoi(p,Roi.TRACED_ROI);
+				roi.setPosition(frm);
+				stkRoi.add(roi);
 			}
 		}
 		// save threshold result
@@ -86,8 +86,7 @@ public class Detect {
 			FileOutputStream fout = new FileOutputStream(f,true);
 			ObjectOutputStream oout = new ObjectOutputStream(fout);
 			// start write
-			oout.writeObject(stkPolygon);
-			oout.writeObject(stkPolygonFrm); 
+			oout.writeObject(stkRoi);
 			// end write
 			oout.close();
 			fout.close();
@@ -124,29 +123,24 @@ public class Detect {
 		imp2.show();
 		System.out.println("Time Difference");
 	}
-	public static void showOverlay(ArrayList<Polygon> stkPolygon,ArrayList<Integer> stkPolygonFrm) {
+	public void load(String infoSave, String path) {
+		File f = new File(path+infoSave+".dat");
+		ArrayList<PolygonRoi> stkRoi = readStkRoi(f);
 		ImagePlus imp = IJ.getImage();
 		Overlay overlay = new Overlay();
-		int N = stkPolygonFrm.size();
-		for (int i=0; i<N; i++) {
-			Roi roi = new PolygonRoi(stkPolygon.get(i),Roi.TRACED_ROI);
-			roi.setPosition(stkPolygonFrm.get(i));
-			overlay.add(roi);
-		}
+		for (PolygonRoi roi:stkRoi) overlay.add(roi);
 		imp.setOverlay(overlay);
 		imp.updateImage();
-		imp.show();
 	}
 	
-	public static void load(String infoSave, String path){
-		
+	public static ArrayList<PolygonRoi> readStkRoi(File f){
+		ArrayList<PolygonRoi> stkRoi = new ArrayList<PolygonRoi>();
 		try {
-			File f = new File(path+infoSave+".dat");
 			// open input stream
 			FileInputStream fin = new FileInputStream(f);
 			ObjectInputStream oin = new ObjectInputStream(fin);
 			// start read
-			showOverlay((ArrayList<Polygon>) oin.readObject(), (ArrayList<Integer>) oin.readObject());
+			stkRoi = (ArrayList<PolygonRoi>) oin.readObject();
 			// end read
 			oin.close();
 			fin.close();
@@ -158,6 +152,7 @@ public class Detect {
 			e.printStackTrace();
 		}
 		System.out.println("loaded");
+		return stkRoi;
 	}
 	
 	public ImageProcessor smooth(ImageProcessor ip, double sigma){
