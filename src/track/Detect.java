@@ -2,6 +2,7 @@ package track;
 
 import java.awt.Color;
 import java.awt.Point;
+import java.awt.Polygon;
 import java.util.ArrayList;
 
 import ij.IJ;
@@ -22,7 +23,6 @@ import ij.plugin.frame.RoiManager;
 import ij.gui.PolygonRoi;
 import ij.gui.Roi;
 
-import java.awt.Polygon;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;

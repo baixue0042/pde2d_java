@@ -1,9 +1,14 @@
 package track;
 
 import java.awt.Font;
+import java.awt.Polygon;
+import java.awt.List;
 import java.util.ArrayList;
 
+import ij.IJ;
+import ij.ImagePlus;
 import ij.gui.Overlay;
+import ij.gui.Roi;
 import ij.gui.TextRoi;
 
 public class Track {
@@ -14,27 +19,26 @@ public class Track {
 	public Track(){
 		// find largest existed traj label
 		this.trajCount = 0;
-		this.allBlobs = (new ReadWrite()).reader("detected.txt");
-	}
-	public float blobOverlap(Blob b1, Blob b2){
-		// fraction of pixels in b1 that overlap with b2
-		float ratio = 0;
-		for (int i=0; i<b1.polygon.npoints; i++){
-			if (b2.polygon.contains(b1.polygon.xpoints[i],b1.polygon.ypoints[i])){
-				ratio++;
-			}
+		RoiManager manager = RoiManager.getInstance();
+		if (manager != null) {
+		    String[] labels = manager.getList().getSelectedItems();
+		    Hashtable<String, Roi> table = (Hashtable<String, Roi>)manager.getROIs();
+		    for (String label : labels) {
+		        int slice = manager.getSliceNumber(label);
+		        Roi roi = table.get(label);
+		        roi.getPolygon();
+		    }
 		}
-		return ratio/b1.polygon.npoints;
 	}
-	public int blobChildren(Blob input){
-		// find children blob with largest overlap
+	
+	public void blobChildren(Roi currentRoi){
+		// find Roi: (1) in the next frame, (2) largest overlap
 		float[] overlap = new float[allBlobs.size()];
-		for (int i=0; i<allBlobs.size(); i++){
-			if (allBlobs.get(i).frm == input.frm+1){
+		for (int index: manager.getIndexes()){
+			if (manager.getRoi(index) == currentRoi.getPosition()+1){
 				overlap[i] = blobOverlap(input,allBlobs.get(i));
 			}
 		}
-		return getIndexOfMax(overlap);
 	}
 	public ArrayList<Integer> getIndex(String name){
 		ArrayList<Integer> index = new ArrayList<Integer>();
@@ -86,8 +90,9 @@ public class Track {
 	public void save(String name){
 		(new ReadWrite()).writer("tracked"+name+".txt", allBlobs);
 	}
-	public void drawOverlays(){
-		overlay = new Overlay();
+	public static void drawLabel(){
+		ImagePlus imp = IJ.getImage();
+		Overlay overlay = new Overlay();
 		Font font = new Font("Arial", Font.PLAIN, 8);
 		for (Blob b : this.allBlobs){
 			b.draw();
@@ -96,19 +101,5 @@ public class Track {
 			text.setPosition(b.frm);
 			overlay.add(text);
 		}
-	}
-	public int getIndexOfMax(float array[]) {
-		if (array.length == 0) {
-			return -1; // array contains no elements
-		}
-		float max = array[0];
-		int pos = 0;
-		for(int i=1; i<array.length; i++) {
-			if (max < array[i]) {
-				pos = i;
-				max = array[i];
-			}
-		}
-		return pos;
 	}
 }

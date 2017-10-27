@@ -7,28 +7,20 @@ import java.awt.GridLayout;
 import java.awt.TextField;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.File;
 
 import ij.IJ;
 import ij.ImageJ;
 import ij.ImagePlus;
-import ij.gui.Overlay;
-import ij.gui.PolygonRoi;
 import ij.gui.Roi;
-import ij.plugin.frame.RoiManager; 
 
 public class WindowDetect extends Frame {
 	private TextField tfSmooth, tfAdjust, tfThresh, tfDiff, tfLoad;
 	private Button btnSmooth, btnAdjust, btnThresh, btnDiff ,btnLoad;
 	private Detect data;
 	private ImagePlus imp;
-	private RoiManager manager; 
 	// Constructor to setup the GUI components and event handlers
 	public WindowDetect() {
 		new ImageJ();
-		RoiManager manager = RoiManager.getInstance();
-		if (manager == null)
-		    manager = new RoiManager();
 		imp = IJ.openImage();
 		Roi.setColor(Color.green);
 		imp.show();
