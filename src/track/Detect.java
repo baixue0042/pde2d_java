@@ -174,7 +174,23 @@ public class Detect {
 		p.multiply(255/(topValue-bottomValue));
 		return p;
 	}
-
+import ij.*;
+import ij.gui.*;
+import ij.plugin.frame.PlugInFrame;
+import java.awt.Label;
+public class FrameDemo_ extends PlugInFrame {
+	public FrameDemo_() {super("FrameDemo");}
+	public void run(String arg) {
+		GenericDialog gd = new GenericDialog("FrameDemo settings");
+		gd.addNumericField("Frame width:",200.0,3);
+		gd.addNumericField("Frame height:",200.0,3);
+		gd.showDialog();
+		if (gd.wasCanceled()) {IJ.error("PlugIn canceled!");return; }
+		this.setSize((int) gd.getNextNumber(),(int) gd.getNextNumber());
+		this.add(new Label("PlugInFrame demo",Label.CENTER));
+		this.show();
+		} 
+	}
 	public ArrayList<Polygon> traceBlobs(ByteProcessor p, int frm){
 		ArrayList<Polygon> frmPolygon = new ArrayList<Polygon>();
 		ByteProcessor labeledproc = new ByteProcessor(p.getWidth(),p.getHeight());

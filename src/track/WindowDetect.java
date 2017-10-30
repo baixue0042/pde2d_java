@@ -21,9 +21,8 @@ public class WindowDetect extends Frame {
 	// Constructor to setup the GUI components and event handlers
 	public WindowDetect() {
 		new ImageJ();
-		imp = IJ.openImage();
+		//imp = IJ.openImage();imp.show();
 		Roi.setColor(Color.green);
-		imp.show();
 
 		data = new Detect();
 		
