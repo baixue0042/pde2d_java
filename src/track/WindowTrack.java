@@ -28,33 +28,27 @@ import ij.plugin.frame.RoiManager;
 
 public class WindowTrack extends Frame {
 private TextField tfInput;
-private Button btnLoad, btnSeed, btnMerge, btnRemove, btnSave;
+private Button btnSeed, btnMerge, btnRemove;
 private RoiManager manager; 
 // Constructor to setup the GUI components and event handlers
 public WindowTrack () {
 	new ImageJ();
-	setLayout(new GridLayout(6, 1, 5, 1));
+	setLayout(new GridLayout(4, 1, 3, 1));
 	tfInput = new TextField("", 20);
 	add(tfInput);
-	btnLoad = new Button("Load");
-	add(btnLoad);
 	btnSeed = new Button("Seed");
 	add(btnSeed);
 	btnMerge = new Button("Merge");
 	add(btnMerge);
 	btnRemove = new Button("Remove");
 	add(btnRemove);
-	btnSave = new Button("Save");
-	add(btnSave);
  
 	// Allocate an instance of inner class BtnListener.
 	BtnListener listener = new BtnListener();
 	// Use the same listener instance to all the 3 Buttons.
-	btnLoad.addActionListener(listener);
 	btnSeed.addActionListener(listener);
 	btnMerge.addActionListener(listener);
 	btnRemove.addActionListener(listener);
-	btnSave.addActionListener(listener);
 
 	setTitle("Master");
 	setSize(100, 600);
@@ -65,47 +59,16 @@ public WindowTrack () {
  * BtnListener is a named inner class used as ActionEvent listener for all the Buttons.
  */
 private class BtnListener implements ActionListener {
-@Override
+	@Override
 	public void actionPerformed(ActionEvent evt) {
 		String info = tfInput.getText();
 		Button source = (Button)evt.getSource();
-		if (source == btnLoad) {
-			Load();
-		} else if (source == btnSeed) {
-			Seed();
-		} else if (source == btnMerge) {
-			Merge(info);
-		} else if (source == btnRemove) {
-			Remove();
-		} else if (source == btnSave) {
-			System.out.println("Save "+info);
-		}
+		if  (source == btnSeed) Seed(); 
+		else if (source == btnMerge) Merge(info);
+		else if (source == btnRemove) Remove();
 		showRoiName();
 		tfInput.setText("");
 	}
-public void load(String infoSave, String path){
-	
-	try {
-		File f = new File(path+infoSave+".dat");
-		// open input stream
-		FileInputStream fin = new FileInputStream(f);
-		ObjectInputStream oin = new ObjectInputStream(fin);
-		// start read
-		ArrayList<Polygon> stkPolygon = (ArrayList<Polygon>) oin.readObject();
-		ArrayList<Integer> (ArrayList<Integer>) oin.readObject());
-		// end read
-		oin.close();
-		fin.close();
-	} catch (FileNotFoundException e) {
-		e.printStackTrace();
-	} catch (IOException e) {
-		e.printStackTrace();
-	} catch (ClassNotFoundException e) {
-		e.printStackTrace();
-	}
-	System.out.println("loaded");
-}
-
 public void Seed(){
 	// use mouse to select a Roi, then click button
 	// create a trajectory from the selected Roi
@@ -174,9 +137,8 @@ public static float polygonOverlap(Roi p1, Roi p2){
 	// # pixels inside of p2 contained in p1/ # pixels inside of p1
 	float p2inp1 = 0;
 	Point[] p1InsidePoints = p1.getContainedPoints(),p2InsidePoints = p2.getContainedPoints();
-	for (Point p: p2InsidePoints) {
+	for (Point p: p2InsidePoints)
 		if (p1.contains(p.x,p.y)) p2inp1++;
-	}
 	return p2inp1/p1InsidePoints.length;
 }
 

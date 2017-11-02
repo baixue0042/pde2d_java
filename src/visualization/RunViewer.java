@@ -73,12 +73,36 @@ public class RunViewer {
 		}
 		curvewindow.displayPlotWindow();
 	}
+	public void openFunction2(){
+		File[] flist = chooseFile();
+		CurveWindow curvewindow = new CurveWindow();
+		double[] info = toDouble(tfInfo.getText());
+		for (File f : flist) {
+			Data data = loadData(f,info);
+			Curve_xt c_mid=new Curve_xt(data,0.5);
+			int classified;
+			if (c_mid.whether_magnified()) {//whether center magnified
+				Curve_xt c_edge=new Curve_xt(data,0);
+				curvewindow.add_curve(c_edge); 
+				if (c_edge.ymax<1.5) {//whether edge is excited
+					classified=2;//center magnified & edge is not excited: localized pulse
+					new SyncImageWinodows(data);
+				} else {
+					classified=1;//center magnified & edge is excited: traveling pulse
+				}
+			} else {
+				classified=0;//center not magnified: nothing
+			}
+			System.out.println(data.k_R[0]+","+data.k_R[1]+","+data.k_R[2]+","+classified);
+		}
+		curvewindow.displayPlotWindow();
+	}
 
 	public class BtnListener implements ActionListener {
 		@Override
 		public void actionPerformed(ActionEvent e) {
 			Button source = (Button)e.getSource();
-			if (source == btnOpen) openFunction();
+			if (source == btnOpen) openFunction2();
 		}
 	}
 	public static double[] toDouble(String str){
