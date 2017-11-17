@@ -71,7 +71,7 @@ public class RunViewer {
 			}
 			System.out.println(data.k_R[0]+","+data.k_R[1]+","+data.k_R[2]+","+classified);
 		}
-		curvewindow.displayPlotWindow();
+		curvewindow.displayWindow();
 	}
 	public void openFunction2(){
 		File[] flist = chooseFile();
@@ -95,7 +95,7 @@ public class RunViewer {
 			}
 			System.out.println(data.k_R[0]+","+data.k_R[1]+","+data.k_R[2]+","+classified);
 		}
-		curvewindow.displayPlotWindow();
+		curvewindow.displayWindow();
 	}
 
 	public class BtnListener implements ActionListener {
